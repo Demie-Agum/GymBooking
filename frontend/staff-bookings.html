@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Bookings - Staff</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <style>
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        thead {
+            background: #3b82f6;
+            color: white;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-confirmed { background: #10b981; color: white; }
+        .badge-queued { background: #f59e0b; color: white; }
+        .badge-cancelled { background: #6b7280; color: white; }
+        .filter-box {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-box select {
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="dashboard-page" data-theme="light">
+    
+    <!-- Navbar -->
+    <nav class="dashboard-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>Staff - View Bookings</h2>
+            </div>
+            <div class="nav-menu">
+                <a href="staff-dashboard.html" class="btn btn-secondary btn-sm">Dashboard</a>
+                <a href="staff-sessions.html" class="btn btn-secondary btn-sm">Manage Sessions</a>
+                <a href="staff-bookings.html" class="btn btn-secondary btn-sm">Manage Bookings</a>
+                <a href="profile.html" class="btn btn-secondary btn-sm">Profile</a>
+                <button id="logoutBtn" class="btn btn-logout btn-sm">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="dashboard-container">
+        
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <h1>All Bookings</h1>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-box">
+            <select id="statusFilter" onchange="applyFilters()">
+                <option value="">All Statuses</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="queued">Queued</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+
+        <!-- Bookings Table -->
+        <div class="table-container">
+            <div id="loading" style="text-align: center; padding: 20px;">Loading bookings...</div>
+            <table id="bookingsTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Image</th>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Session</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="bookingsTableBody">
+                </tbody>
+            </table>
+            <div id="noBookings" style="display: none; text-align: center; padding: 20px; color: #6b7280;">
+                No bookings found.
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let allBookings = [];
+
+        // Check authentication and staff role
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (!apiClient.isAuthenticated()) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Verify staff role
+            try {
+                const userResponse = await apiClient.get('/user');
+                if (userResponse.success && userResponse.data.success) {
+                    const user = userResponse.data.data.user;
+                    if (user.role !== 'staff' && user.role !== 'admin') {
+                        window.location.href = 'dashboard.html';
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking staff access:', error);
+                window.location.href = 'login.html';
+                return;
+            }
+
+            await loadBookings();
+            setupEventListeners();
+        });
+
+        async function loadBookings() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('bookingsTable').style.display = 'none';
+                document.getElementById('noBookings').style.display = 'none';
+
+                const response = await apiClient.get('/staff/bookings');
+                
+                if (response.success && response.data.success) {
+                    allBookings = response.data.data;
+                    displayBookings(allBookings);
+                } else {
+                    alert('Failed to load bookings: ' + (response.data?.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+                alert('Failed to load bookings. Please refresh the page.');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function displayBookings(bookings) {
+            const tbody = document.getElementById('bookingsTableBody');
+            tbody.innerHTML = '';
+
+            if (bookings.length === 0) {
+                document.getElementById('noBookings').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('bookingsTable').style.display = 'table';
+
+            // Default image for sessions
+            const defaultImage = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'60\' height=\'60\'%3E%3Crect width=\'60\' height=\'60\' fill=\'%23e5e7eb\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%239ca3af\' font-size=\'10\'%3ENo Image%3C/text%3E%3C/svg%3E';
+            
+            bookings.forEach(booking => {
+                const imageUrl = booking.gym_session?.image || defaultImage;
+                const row = document.createElement('tr');
+                const createdDate = new Date(booking.created_at).toLocaleDateString();
+                row.innerHTML = `
+                    <td>${booking.id}</td>
+                    <td>
+                        <img src="${imageUrl}" alt="${escapeHtml(booking.gym_session.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db;" onerror="this.src='${defaultImage}'">
+                    </td>
+                    <td>${escapeHtml(booking.user.name)}</td>
+                    <td>${escapeHtml(booking.user.email)}</td>
+                    <td>${escapeHtml(booking.gym_session.name)}</td>
+                    <td>${booking.gym_session.date}</td>
+                    <td>${booking.gym_session.start_time} - ${booking.gym_session.end_time}</td>
+                    <td><span class="badge badge-${booking.status}">${escapeHtml(booking.status)}</span></td>
+                    <td>${createdDate}</td>
+                    <td>
+                        ${booking.status !== 'cancelled' && booking.status !== 'confirmed' ? `<button class="btn btn-logout btn-sm" onclick="cancelBooking(${booking.id})" style="background: #ef4444;">Cancel</button>` : ''}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function applyFilters() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            let filtered = allBookings;
+
+            if (statusFilter) {
+                filtered = filtered.filter(booking => booking.status === statusFilter);
+            }
+
+            displayBookings(filtered);
+        }
+
+        function setupEventListeners() {
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+        }
+
+        async function cancelBooking(bookingId) {
+            if (!confirm('Are you sure you want to cancel this booking?')) {
+                return;
+            }
+
+            try {
+                const response = await apiClient.delete(`/staff/bookings/${bookingId}`);
+                if (response.success && response.data.success) {
+                    alert('Booking cancelled successfully!');
+                    await loadBookings();
+                } else {
+                    alert('Error: ' + (response.data?.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error cancelling booking:', error);
+                alert('Failed to cancel booking. Please try again.');
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await apiClient.post('/logout');
+                apiClient.removeToken();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                apiClient.removeToken();
+                window.location.href = 'login.html';
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
+
+
+
+

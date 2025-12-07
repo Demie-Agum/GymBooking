@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Test - Create Booking</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        #output {
+            background: #fff;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Quick Booking Test</h1>
+    
+    <div class="test-section">
+        <h3>Step 1: Check Your Account</h3>
+        <button onclick="checkAccount()">Check Account & Membership</button>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 2: Get Available Sessions</h3>
+        <button onclick="getSessions()">Get Sessions</button>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 3: Create a Booking</h3>
+        <button onclick="createBooking()">Create Test Booking</button>
+        <p><small>This will book the first available session</small></p>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 4: Check Your Bookings</h3>
+        <button onclick="checkBookings()">Check Bookings Count</button>
+    </div>
+
+    <div id="output"></div>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            output.innerHTML += `<div class="${className}">[${new Date().toLocaleTimeString()}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+            console.log(message);
+        }
+
+        async function checkAccount() {
+            log('=== Checking Account ===', 'info');
+            try {
+                const response = await apiClient.get('/user');
+                if (response.success && response.data.success) {
+                    const user = response.data.data.user;
+                    log(`✓ Logged in as: ${user.firstname} ${user.lastname}`, 'success');
+                    log(`✓ Email: ${user.email}`, 'success');
+                    
+                    if (user.membership_level) {
+                        log(`✓ Membership: ${user.membership_level.name}`, 'success');
+                        log(`✓ Weekly Limit: ${user.membership_level.weekly_limit}`, 'success');
+                    } else {
+                        log('✗ NO MEMBERSHIP LEVEL ASSIGNED!', 'error');
+                        log('Please assign a membership level in admin panel', 'error');
+                        return;
+                    }
+                } else {
+                    log('✗ Failed to get user info', 'error');
+                }
+            } catch (error) {
+                log(`✗ Error: ${error.message}`, 'error');
+            }
+        }
+
+        let availableSessions = [];
+
+        async function getSessions() {
+            log('\n=== Getting Sessions ===', 'info');
+            try {
+                const response = await apiClient.get('/sessions?future_only=true', false);
+                if (response.success && response.data.success) {
+                    availableSessions = response.data.data;
+                    log(`✓ Found ${availableSessions.length} sessions`, 'success');
+                    
+                    if (availableSessions.length === 0) {
+                        log('✗ NO SESSIONS AVAILABLE!', 'error');
+                        log('Please create sessions in admin panel first', 'error');
+                        return;
+                    }
+                    
+                    availableSessions.forEach((s, i) => {
+                        log(`  ${i + 1}. ${s.name} - ${s.date} (${s.available_spots} spots)`, 'info');
+                    });
+                } else {
+                    log('✗ Failed to get sessions', 'error');
+                }
+            } catch (error) {
+                log(`✗ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function createBooking() {
+            log('\n=== Creating Booking ===', 'info');
+            
+            // First get sessions if we don't have them
+            if (availableSessions.length === 0) {
+                log('Getting sessions first...', 'info');
+                await getSessions();
+            }
+            
+            if (availableSessions.length === 0) {
+                log('✗ Cannot create booking - no sessions available', 'error');
+                return;
+            }
+            
+            // Use first available session
+            const session = availableSessions[0];
+            log(`Attempting to book: ${session.name} (ID: ${session.id})`, 'info');
+            
+            try {
+                const response = await apiClient.post('/bookings', {
+                    gym_session_id: session.id
+                });
+                
+                log(`Response status: ${response.status}`, 'info');
+                log(`Response success: ${response.success}`, 'info');
+                
+                if (response.success && response.data && response.data.success) {
+                    log('✓✓✓ BOOKING CREATED SUCCESSFULLY! ✓✓✓', 'success');
+                    log(`Message: ${response.data.message}`, 'success');
+                    log('\nNow go to dashboard and click Refresh button!', 'success');
+                } else {
+                    log('✗ Booking failed', 'error');
+                    log(`Error: ${response.data?.message || response.data?.error || 'Unknown error'}`, 'error');
+                    if (response.data?.errors) {
+                        log(`Validation errors: ${JSON.stringify(response.data.errors)}`, 'error');
+                    }
+                }
+            } catch (error) {
+                log(`✗ Exception: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkBookings() {
+            log('\n=== Checking Bookings ===', 'info');
+            try {
+                const response = await apiClient.get('/bookings/me');
+                if (response.success && response.data.success) {
+                    const bookings = response.data.data;
+                    log(`✓ You have ${bookings.length} bookings`, 'success');
+                    
+                    if (bookings.length === 0) {
+                        log('No bookings found. Create one using Step 3 above.', 'info');
+                    } else {
+                        bookings.forEach((b, i) => {
+                            log(`  ${i + 1}. ${b.gym_session.name} - Status: ${b.status}`, 'info');
+                        });
+                        
+                        const pendingConfirmed = bookings.filter(b => 
+                            b.status === 'pending' || b.status === 'confirmed' || b.status === 'queued'
+                        ).length;
+                        log(`\n✓ Count for dashboard: ${pendingConfirmed} bookings`, 'success');
+                    }
+                } else {
+                    log('✗ Failed to get bookings', 'error');
+                }
+            } catch (error) {
+                log(`✗ Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
+

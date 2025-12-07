@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Sessions - Admin</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <style>
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        thead {
+            background: #3b82f6;
+            color: white;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 14px;
+            margin: 0 4px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-full { background: #ef4444; color: white; }
+        .badge-available { background: #10b981; color: white; }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .modal.show {
+            display: block !important;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-group small {
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="dashboard-page" data-theme="light">
+    
+    <!-- Navbar -->
+    <nav class="dashboard-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>Admin - Manage Sessions</h2>
+            </div>
+            <div class="nav-menu">
+                <a href="admin-dashboard.html" class="btn btn-secondary btn-sm">Dashboard</a>
+                <a href="admin-users.html" class="btn btn-secondary btn-sm">Manage Users</a>
+                <a href="admin-sessions.html" class="btn btn-primary btn-sm">Manage Sessions</a>
+                <a href="admin-bookings.html" class="btn btn-secondary btn-sm">Manage Bookings</a>
+                <button id="logoutBtn" class="btn btn-logout btn-sm">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="dashboard-container">
+        
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <h1>Session Management</h1>
+                <button id="addSessionBtn" type="button" class="btn btn-primary">+ Add New Session</button>
+            </div>
+        </div>
+
+        <!-- Sessions Table -->
+        <div class="table-container">
+            <div id="loading" style="text-align: center; padding: 20px;">Loading sessions...</div>
+            <table id="sessionsTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Capacity</th>
+                        <th>Booked</th>
+                        <th>Available</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="sessionsTableBody">
+                </tbody>
+            </table>
+            <div id="noSessions" style="display: none; text-align: center; padding: 20px; color: #6b7280;">
+                No sessions found.
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Add/Edit Session Modal -->
+    <div id="sessionModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Add Session</h2>
+            <form id="sessionForm">
+                <input type="hidden" id="sessionId">
+                <div class="form-group">
+                    <label>Session Name *</label>
+                    <select id="name" required>
+                        <option value="">Select a session type...</option>
+                        <option value="Morning Cardio">Morning Cardio</option>
+                        <option value="Evening Cardio">Evening Cardio</option>
+                        <option value="Strength Training">Strength Training</option>
+                        <option value="Yoga Class">Yoga Class</option>
+                        <option value="HIIT Workout">HIIT Workout</option>
+                        <option value="Pilates">Pilates</option>
+                        <option value="CrossFit">CrossFit</option>
+                        <option value="Zumba">Zumba</option>
+                        <option value="Spin Class">Spin Class</option>
+                        <option value="Boxing Training">Boxing Training</option>
+                        <option value="Core Strengthening">Core Strengthening</option>
+                        <option value="Flexibility & Stretching">Flexibility & Stretching</option>
+                        <option value="Full Body Workout">Full Body Workout</option>
+                        <option value="Upper Body Strength">Upper Body Strength</option>
+                        <option value="Lower Body Training">Lower Body Training</option>
+                    </select>
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">Select the type of gym session</small>
+                </div>
+                <div class="form-group">
+                    <label>Date *</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div class="form-group">
+                    <label>Start Time *</label>
+                    <input type="time" id="start_time" required>
+                </div>
+                <div class="form-group">
+                    <label>End Time *</label>
+                    <input type="time" id="end_time" required>
+                </div>
+                <div class="form-group">
+                    <label>Capacity *</label>
+                    <input type="number" id="capacity" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Session Image</label>
+                    <input type="file" id="image" accept="image/*" onchange="handleImageUpload(event)">
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">Upload an image for this session (optional, max 2MB)</small>
+                    <div id="imagePreview" style="margin-top: 10px; display: none;">
+                        <img id="previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 1px solid #d1d5db;">
+                        <button type="button" onclick="clearImage()" style="display: block; margin-top: 5px; padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Clear New Image</button>
+                    </div>
+                    <div id="existingImagePreview" style="margin-top: 10px; display: none;">
+                        <p style="color: #6b7280; font-size: 14px; margin-bottom: 5px;">Current image:</p>
+                        <img id="existingImg" src="" alt="Current Image" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 1px solid #d1d5db;">
+                        <div style="margin-top: 5px;">
+                            <input type="checkbox" id="removeImage">
+                            <label for="removeImage" style="margin-left: 5px; color: #6b7280;">Remove existing image</label>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" id="saveSessionBtn" class="btn btn-primary" style="flex: 1; cursor: pointer;">Save</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.closeModal()" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let allSessions = [];
+
+        // Toast notification helper
+        function showToast(message, type = 'success') {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.onmouseenter = Swal.stopTimer;
+                    toast.onmouseleave = Swal.resumeTimer;
+                }
+            });
+
+            Toast.fire({
+                icon: type,
+                title: message
+            });
+        }
+
+        // Check authentication and admin role
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (!apiClient.isAuthenticated()) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Verify admin role
+            try {
+                const userResponse = await apiClient.get('/user');
+                if (userResponse.success && userResponse.data.success) {
+                    const user = userResponse.data.data.user;
+                    if (user.role !== 'admin') {
+                        window.location.href = 'dashboard.html';
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking admin access:', error);
+                window.location.href = 'login.html';
+                return;
+            }
+
+            await loadSessions();
+            setupEventListeners();
+        });
+
+        async function loadSessions() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('sessionsTable').style.display = 'none';
+                document.getElementById('noSessions').style.display = 'none';
+
+                const response = await apiClient.get('/sessions', false);
+                
+                if (response.success && response.data.success) {
+                    allSessions = response.data.data;
+                    displaySessions(allSessions);
+                } else {
+                    showToast('Failed to load sessions: ' + (response.data?.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                showToast('Failed to load sessions. Please refresh the page.', 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function displaySessions(sessions) {
+            const tbody = document.getElementById('sessionsTableBody');
+            tbody.innerHTML = '';
+
+            if (sessions.length === 0) {
+                document.getElementById('noSessions').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('sessionsTable').style.display = 'table';
+
+            sessions.forEach(session => {
+                const available = session.available_spots || 0;
+                const isFull = session.is_full || false;
+                
+                // Default image - you can replace this with a local image path like 'images/default-session.png'
+                const defaultImage = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'60\' height=\'60\'%3E%3Crect width=\'60\' height=\'60\' fill=\'%23e5e7eb\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%239ca3af\' font-size=\'10\'%3ENo Image%3C/text%3E%3C/svg%3E';
+                const imageUrl = session.image || defaultImage;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${session.id}</td>
+                    <td>
+                        <img src="${imageUrl}" alt="${escapeHtml(session.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db;" onerror="this.src='${defaultImage}'">
+                    </td>
+                    <td>${escapeHtml(session.name)}</td>
+                    <td>${session.date}</td>
+                    <td>${session.start_time} - ${session.end_time}</td>
+                    <td>${session.capacity}</td>
+                    <td>${session.confirmed_count || 0}</td>
+                    <td>${available}</td>
+                    <td><span class="badge ${isFull ? 'badge-full' : 'badge-available'}">${isFull ? 'Full' : 'Available'}</span></td>
+                    <td>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="window.editSession(${session.id})" style="cursor: pointer;">Edit</button>
+                        <button type="button" class="btn btn-logout btn-sm" onclick="window.deleteSession(${session.id})" style="cursor: pointer;">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function setupEventListeners() {
+            const addBtn = document.getElementById('addSessionBtn');
+            if (addBtn) {
+                addBtn.addEventListener('click', function() {
+                    console.log('Add Session button clicked');
+                    window.openModal();
+                });
+            }
+            
+            const sessionForm = document.getElementById('sessionForm');
+            if (sessionForm) {
+                sessionForm.addEventListener('submit', handleSubmit);
+                console.log('Form submit listener attached');
+            } else {
+                console.error('Session form not found!');
+            }
+            
+            // Also add click handler to save button as backup
+            const saveBtn = document.getElementById('saveSessionBtn');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function(e) {
+                    console.log('Save button clicked directly');
+                    // Let the form submit handler take over
+                });
+            }
+            
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', handleLogout);
+            }
+
+            // Set up time validation - this will be called when modal opens
+            setupTimeValidation();
+        }
+
+        // Helper function to convert time string to minutes for comparison
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function setupTimeValidation() {
+            const startTimeInput = document.getElementById('start_time');
+            const endTimeInput = document.getElementById('end_time');
+            
+            if (startTimeInput && endTimeInput) {
+                // Remove any existing listeners by cloning and replacing
+                const newStartInput = startTimeInput.cloneNode(true);
+                const currentStartValue = startTimeInput.value;
+                startTimeInput.parentNode.replaceChild(newStartInput, startTimeInput);
+                newStartInput.value = currentStartValue;
+                
+                const newEndInput = endTimeInput.cloneNode(true);
+                const currentEndValue = endTimeInput.value;
+                endTimeInput.parentNode.replaceChild(newEndInput, endTimeInput);
+                newEndInput.value = currentEndValue;
+                
+                // Function to update end_time min based on start_time
+                function updateEndTimeMin() {
+                    const startTime = newStartInput.value;
+                    if (startTime) {
+                        // Set end_time min to be 1 minute after start_time
+                        const [hours, minutes] = startTime.split(':');
+                        const startDate = new Date();
+                        startDate.setHours(parseInt(hours), parseInt(minutes) + 1, 0, 0);
+                        const minEndTime = startDate.toTimeString().slice(0, 5);
+                        
+                        // Set both min attribute and property to ensure it works
+                        newEndInput.min = minEndTime;
+                        newEndInput.setAttribute('min', minEndTime);
+                        
+                        // Also set step to 1 minute to ensure precise control
+                        newEndInput.step = 60;
+                        
+                        // If current end_time is before or equal to start_time, clear it
+                        if (newEndInput.value) {
+                            const startMinutes = timeToMinutes(startTime);
+                            const endMinutes = timeToMinutes(newEndInput.value);
+                            if (endMinutes <= startMinutes) {
+                                newEndInput.value = '';
+                                showToast('End time must be after start time', 'error');
+                            }
+                        }
+                    } else {
+                        // If start_time is cleared, remove min restriction
+                        newEndInput.removeAttribute('min');
+                        newEndInput.removeAttribute('step');
+                    }
+                }
+                
+                // Function to validate end_time when it changes
+                function validateEndTime() {
+                    const startTime = newStartInput.value;
+                    const endTime = newEndInput.value;
+                    
+                    if (startTime && endTime) {
+                        const startMinutes = timeToMinutes(startTime);
+                        const endMinutes = timeToMinutes(endTime);
+                        
+                        // End time must be at least 1 minute after start time
+                        if (endMinutes <= startMinutes) {
+                            newEndInput.value = '';
+                            showToast('End time must be after start time', 'error');
+                            // Re-focus the input
+                            setTimeout(() => newEndInput.focus(), 100);
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                
+                // Add event listeners
+                newStartInput.addEventListener('change', updateEndTimeMin);
+                newStartInput.addEventListener('input', updateEndTimeMin);
+                
+                newEndInput.addEventListener('change', function() {
+                    if (!validateEndTime()) {
+                        // If validation fails, update the min attribute again to ensure it's enforced
+                        updateEndTimeMin();
+                    }
+                });
+                
+                newEndInput.addEventListener('input', function() {
+                    // Validate in real-time as user types or selects
+                    const startTime = newStartInput.value;
+                    const endTime = this.value;
+                    if (startTime && endTime) {
+                        // Compare times
+                        const startMinutes = timeToMinutes(startTime);
+                        const endMinutes = timeToMinutes(endTime);
+                        
+                        if (endMinutes <= startMinutes) {
+                            // Don't allow the selection - clear it immediately
+                            this.value = '';
+                            showToast('End time must be after start time', 'error');
+                            // Update min again to reinforce the restriction
+                            updateEndTimeMin();
+                        }
+                    }
+                });
+                
+                // Also validate on blur to catch any edge cases
+                newEndInput.addEventListener('blur', function() {
+                    if (!validateEndTime()) {
+                        updateEndTimeMin();
+                    }
+                });
+                
+                // Add beforeinput event to prevent invalid input before it happens
+                newEndInput.addEventListener('beforeinput', function(e) {
+                    const startTime = newStartInput.value;
+                    if (startTime && e.data) {
+                        // This is a bit tricky with time inputs, but we'll validate after input
+                        // The input event will handle the actual validation
+                    }
+                });
+                
+                // Set initial min if start_time already has a value
+                if (newStartInput.value) {
+                    updateEndTimeMin();
+                }
+            }
+        }
+
+        window.openModal = function(sessionId = null) {
+            console.log('openModal called with sessionId:', sessionId, 'Type:', typeof sessionId);
+            console.log('All sessions:', allSessions);
+            const modal = document.getElementById('sessionModal');
+            const form = document.getElementById('sessionForm');
+            
+            if (sessionId) {
+                // Convert sessionId to number for comparison
+                const id = parseInt(sessionId);
+                const session = allSessions.find(s => s.id === id || s.id === sessionId);
+                console.log('Found session:', session);
+                
+                if (session) {
+                    document.getElementById('modalTitle').textContent = 'Edit Session';
+                    document.getElementById('sessionId').value = session.id;
+                    document.getElementById('name').value = session.name || '';
+                    document.getElementById('date').value = session.date || '';
+                    
+                    // Clear min restrictions before setting values
+                    document.getElementById('start_time').removeAttribute('min');
+                    document.getElementById('end_time').removeAttribute('min');
+                    
+                    document.getElementById('start_time').value = session.start_time || '';
+                    document.getElementById('end_time').value = session.end_time || '';
+                    document.getElementById('capacity').value = session.capacity || '';
+                    
+                    // Set end_time min based on start_time if start_time exists
+                    // This will be updated dynamically when start_time changes
+                    if (session.start_time) {
+                        const [hours, minutes] = session.start_time.split(':');
+                        const startDate = new Date();
+                        startDate.setHours(parseInt(hours), parseInt(minutes) + 1, 0, 0);
+                        const minEndTime = startDate.toTimeString().slice(0, 5);
+                        const endTimeInput = document.getElementById('end_time');
+                        endTimeInput.min = minEndTime;
+                        endTimeInput.setAttribute('min', minEndTime);
+                        endTimeInput.step = 60;
+                        
+                        // Validate existing end_time
+                        const startMinutes = timeToMinutes(session.start_time);
+                        const endMinutes = timeToMinutes(session.end_time);
+                        if (session.end_time && endMinutes <= startMinutes) {
+                            endTimeInput.value = '';
+                        }
+                    }
+                    
+                    // Reset file input
+                    document.getElementById('image').value = '';
+                    document.getElementById('imagePreview').style.display = 'none';
+                    document.getElementById('removeImage').checked = false;
+                    
+                    if (session.image) {
+                        document.getElementById('existingImg').src = session.image;
+                        document.getElementById('existingImagePreview').style.display = 'block';
+                    } else {
+                        document.getElementById('existingImagePreview').style.display = 'none';
+                    }
+                } else {
+                    console.error('Session not found with id:', sessionId);
+                    showToast('Session not found. Please refresh the page.', 'error');
+                    return;
+                }
+            } else {
+                document.getElementById('modalTitle').textContent = 'Add Session';
+                form.reset();
+                document.getElementById('sessionId').value = '';
+                document.getElementById('image').value = '';
+                document.getElementById('imagePreview').style.display = 'none';
+                document.getElementById('existingImagePreview').style.display = 'none';
+                document.getElementById('removeImage').checked = false;
+                // Set minimum date to today
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('date').min = today;
+                // Clear any min restrictions on time inputs
+                document.getElementById('start_time').removeAttribute('min');
+                const endTimeInput = document.getElementById('end_time');
+                endTimeInput.removeAttribute('min');
+                endTimeInput.removeAttribute('step');
+            }
+            
+            modal.style.display = 'block';
+            modal.classList.add('show');
+            
+            // Set up time validation after modal is shown
+            setupTimeValidation();
+        }
+
+        window.closeModal = function() {
+            console.log('closeModal called');
+            const modal = document.getElementById('sessionModal');
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+            document.getElementById('sessionForm').reset();
+            document.getElementById('image').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('existingImagePreview').style.display = 'none';
+            document.getElementById('removeImage').checked = false;
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            console.log('Form submit triggered');
+            
+            const sessionId = document.getElementById('sessionId').value;
+            
+            // Get time values and ensure they're in H:i format (HH:MM, no seconds)
+            let startTime = document.getElementById('start_time').value;
+            let endTime = document.getElementById('end_time').value;
+            
+            // If time includes seconds (HH:MM:SS), remove them
+            if (startTime && startTime.length > 5) {
+                startTime = startTime.substring(0, 5);
+            }
+            if (endTime && endTime.length > 5) {
+                endTime = endTime.substring(0, 5);
+            }
+            
+            // Final validation: Ensure end_time is after start_time
+            if (startTime && endTime) {
+                const startMinutes = timeToMinutes(startTime);
+                const endMinutes = timeToMinutes(endTime);
+                
+                if (endMinutes <= startMinutes) {
+                    showToast('End time must be after start time. Please correct the times.', 'error');
+                    document.getElementById('end_time').focus();
+                    return;
+                }
+            }
+            
+            // Create FormData for file upload
+            const formData = new FormData();
+            formData.append('name', document.getElementById('name').value);
+            formData.append('date', document.getElementById('date').value);
+            formData.append('start_time', startTime);
+            formData.append('end_time', endTime);
+            formData.append('capacity', parseInt(document.getElementById('capacity').value));
+
+            // Handle image file upload
+            const imageFile = document.getElementById('image').files[0];
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+
+            // Handle remove image checkbox
+            const removeImage = document.getElementById('removeImage');
+            if (removeImage && removeImage.checked) {
+                formData.append('remove_image', '1');
+            }
+
+            console.log('Submitting form data with file upload');
+
+            try {
+                let response;
+                if (sessionId) {
+                    console.log('Updating session:', sessionId);
+                    // For PUT requests with FormData, we need to use POST with _method
+                    formData.append('_method', 'PUT');
+                    response = await apiClient.putFormData(`/admin/sessions/${sessionId}`, formData);
+                } else {
+                    console.log('Creating new session');
+                    response = await apiClient.postFormData('/admin/sessions', formData);
+                }
+
+                console.log('Response:', response);
+
+                if (response.success && response.data.success) {
+                    showToast(sessionId ? 'Session updated successfully!' : 'Session created successfully!', 'success');
+                    window.closeModal();
+                    await loadSessions();
+                } else {
+                    const errorMsg = response.data?.message || 'Unknown error';
+                    const errorDetail = response.data?.error || '';
+                    const errors = response.data?.errors;
+                    let fullErrorMsg = errorMsg;
+                    if (errorDetail) {
+                        fullErrorMsg += ': ' + errorDetail;
+                    }
+                    if (errors) {
+                        const errorList = Object.values(errors).flat().join(', ');
+                        fullErrorMsg += ' ' + errorList;
+                    }
+                    console.error('Session creation error:', response);
+                    showToast('Error: ' + fullErrorMsg, 'error');
+                }
+            } catch (error) {
+                console.error('Error saving session:', error);
+                const errorMsg = error.response?.data?.error || 
+                                error.response?.data?.message || 
+                                error.message || 
+                                'Unknown error';
+                console.error('Full error details:', error);
+                showToast('Failed to save session: ' + errorMsg, 'error');
+            }
+        }
+
+        window.editSession = async function(sessionId) {
+            console.log('Edit session clicked:', sessionId, 'Type:', typeof sessionId);
+            if (!sessionId) {
+                console.error('No session ID provided');
+                showToast('Error: No session ID provided', 'error');
+                return;
+            }
+            window.openModal(sessionId);
+        }
+
+        window.deleteSession = async function(sessionId) {
+            console.log('Delete session clicked:', sessionId);
+            
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: 'This session and all associated bookings will be permanently deleted!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            try {
+                const response = await apiClient.delete(`/admin/sessions/${sessionId}`);
+                if (response.success && response.data.success) {
+                    showToast('Session deleted successfully!', 'success');
+                    await loadSessions();
+                } else {
+                    showToast('Error: ' + (response.data?.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting session:', error);
+                showToast('Failed to delete session. Please try again.', 'error');
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await apiClient.post('/logout');
+                apiClient.removeToken();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                apiClient.removeToken();
+                window.location.href = 'login.html';
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                document.getElementById('imagePreview').style.display = 'none';
+                document.getElementById('removeImage').checked = false;
+                return;
+            }
+
+            // Check file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                showToast('Image size must be less than 2MB. Please compress the image.', 'error');
+                event.target.value = '';
+                document.getElementById('imagePreview').style.display = 'none';
+                return;
+            }
+
+            // Check file type
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select a valid image file', 'error');
+                event.target.value = '';
+                document.getElementById('imagePreview').style.display = 'none';
+                return;
+            }
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+            };
+            reader.onerror = function() {
+                showToast('Error reading image file', 'error');
+                event.target.value = '';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImage() {
+            document.getElementById('image').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('sessionModal');
+            if (event.target === modal) {
+                window.closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+

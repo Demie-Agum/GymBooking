@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Signup - Modern Auth</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    
+    <style>
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        #resumeBanner button:hover {
+            background: rgba(255, 255, 255, 0.9) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+<body data-theme="light">
+    
+    <!-- Back to Home Link -->
+    <a href="index.html" style="position: fixed; top: 2rem; left: 2rem; color: var(--text); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; z-index: 1000; background: var(--card-bg); padding: 0.5rem 1rem; border-radius: 8px; box-shadow: var(--shadow-md); transition: all 0.3s ease;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Back to Home
+    </a>
+
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        <svg id="moonIcon" class="hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+    </button>
+
+    <!-- Auth Container -->
+    <div class="auth-container">
+        <!-- Resume Verification Banner (Hidden by default) -->
+        <div id="resumeBanner" style="display: none; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; padding: 16px 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); animation: slideDown 0.4s ease;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <div style="flex: 1;">
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 700;">Email Verification Pending</h3>
+                    <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.95;">You have an unverified account: <strong id="pendingEmailDisplay"></strong></p>
+                </div>
+            </div>
+            <button onclick="resumeVerification()" style="width: 100%; padding: 10px 16px; background: white; color: #f59e0b; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease; margin-top: 8px;">
+                📧 Continue Verification
+            </button>
+        </div>
+        
+        <div class="auth-card">
+            
+            <!-- Header -->
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h1 class="auth-title">Gym Booking</h1>
+                <p class="auth-subtitle">Sign in to your account or create a new one</p>
+            </div>
+
+            <!-- Form Toggle -->
+            <div class="form-toggle">
+                <button class="toggle-btn active" id="loginToggle" type="button">Login</button>
+                <button class="toggle-btn" id="signupToggle" type="button">Sign Up</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <label class="form-label" for="loginEmail">
+                        Email <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="email" 
+                        id="loginEmail" 
+                        class="form-input" 
+                        placeholder="Enter your email"
+                        required
+                    >
+                    <span class="error-message" id="loginEmailError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="loginPassword">
+                        Password <span class="required">*</span>
+                    </label>
+                    <div class="password-group">
+                        <input 
+                            type="password" 
+                            id="loginPassword" 
+                            class="form-input" 
+                            placeholder="Enter your password"
+                            required
+                        >
+                        <button type="button" class="password-toggle" data-target="loginPassword">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <span class="error-message" id="loginPasswordError"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="loginBtn">
+                    Sign In
+                </button>
+
+               <!-- Forgot Password Link -->
+    <div class="form-extras" style="text-align: right; margin-bottom: 1.5rem;">
+        <a href="forgotpassword.html" class="forgot-password-link" style="color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 600; transition: color 0.3s ease;">
+            Forgot Password?
+        </a>
+    </div>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="signupForm" class="auth-form form-hidden">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="signupFirstname">
+                            First Name <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="signupFirstname" 
+                            class="form-input" 
+                            placeholder="John"
+                            required
+                        >
+                        <span class="error-message" id="signupFirstnameError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signupLastname">
+                            Last Name <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="signupLastname" 
+                            class="form-input" 
+                            placeholder="Doe"
+                            required
+                        >
+                        <span class="error-message" id="signupLastnameError"></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="signupMiddlename">
+                        Middle Name
+                    </label>
+                    <input 
+                        type="text" 
+                        id="signupMiddlename" 
+                        class="form-input" 
+                        placeholder="Optional"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="signupEmail">
+                        Email <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="email" 
+                        id="signupEmail" 
+                        class="form-input" 
+                        placeholder="john.doe@example.com"
+                        required
+                    >
+                    <span class="error-message" id="signupEmailError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="signupPassword">
+                        Password <span class="required">*</span>
+                    </label>
+                    <div class="password-group">
+                        <input 
+                            type="password" 
+                            id="signupPassword" 
+                            class="form-input" 
+                            placeholder="Min. 8 characters"
+                            required
+                        >
+                        <button type="button" class="password-toggle" data-target="signupPassword">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <span class="error-message" id="signupPasswordError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="signupPasswordConfirm">
+                        Confirm Password <span class="required">*</span>
+                    </label>
+                    <div class="password-group">
+                        <input 
+                            type="password" 
+                            id="signupPasswordConfirm" 
+                            class="form-input" 
+                            placeholder="Re-enter password"
+                            required
+                        >
+                        <button type="button" class="password-toggle" data-target="signupPasswordConfirm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <span class="error-message" id="signupPasswordConfirmError"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="signupBtn">
+                    Create Account
+                </button>
+
+                <div class="form-link text-center">
+                    By signing up, you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>
+

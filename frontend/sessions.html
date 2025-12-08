@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Sessions - Browse</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/booking.js"></script>
+    <style>
+        .sessions-page {
+            padding: 2rem;
+        }
+        .page-header {
+            margin-bottom: 2rem;
+        }
+        .page-header h1 {
+            margin-bottom: 0.5rem;
+        }
+        #sessions-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .session-card {
+            background: var(--card-bg, #fff);
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .session-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        .session-image {
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .session-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .session-card > .session-header,
+        .session-card > .session-details,
+        .session-card > .session-actions {
+            padding: 1.5rem;
+        }
+        .session-card > .session-header {
+            padding-bottom: 1rem;
+        }
+        .session-card > .session-details {
+            padding-top: 0;
+            flex-grow: 1;
+        }
+        .session-card > .session-actions {
+            padding-top: 1rem;
+        }
+        .session-card.full {
+            opacity: 0.7;
+        }
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .session-header h3 {
+            margin: 0;
+            color: var(--text-primary, #1f2937);
+        }
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .full-badge {
+            background: #ef4444;
+            color: white;
+        }
+        .session-details p {
+            margin: 0.5rem 0;
+            color: var(--text-secondary, #6b7280);
+        }
+        .session-actions {
+            margin-top: 1rem;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        .btn-primary.disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .no-sessions {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary, #6b7280);
+        }
+        #loading {
+            text-align: center;
+            padding: 2rem;
+        }
+        #error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body class="dashboard-page" data-theme="light">
+    
+    <!-- Navbar -->
+    <nav class="dashboard-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>Gym Booking System</h2>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="btn btn-secondary btn-sm">Dashboard</a>
+                <a href="sessions.html" class="btn btn-primary btn-sm">Browse Sessions</a>
+                <a href="my-bookings.html" class="btn btn-secondary btn-sm">My Bookings</a>
+                <a href="profile.html" class="btn btn-secondary btn-sm">Profile</a>
+                <button id="logoutBtn" class="btn btn-logout btn-sm">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="sessions-page">
+        <div class="page-header">
+            <h1>Available Gym Sessions</h1>
+            <p>Browse and book your favorite gym sessions</p>
+        </div>
+
+        <div id="error-message"></div>
+        <div id="loading">Loading sessions...</div>
+        <div id="sessions-list"></div>
+    </div>
+
+    <script>
+        // Setup logout
+        document.getElementById('logoutBtn').addEventListener('click', async function() {
+            try {
+                await apiClient.post('/logout');
+                apiClient.removeToken();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                apiClient.removeToken();
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
+

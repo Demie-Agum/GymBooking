@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Bookings - Admin</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <style>
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        thead {
+            background: #3b82f6;
+            color: white;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 14px;
+            margin: 0 4px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-confirmed { background: #10b981; color: white; }
+        .badge-queued { background: #f59e0b; color: white; }
+        .badge-cancelled { background: #6b7280; color: white; }
+        .badge-pending { background: #3b82f6; color: white; }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .modal.show {
+            display: block !important;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-group small {
+            font-size: 0.875rem;
+        }
+        .filter-box {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-box select {
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="dashboard-page" data-theme="light">
+    
+    <!-- Navbar -->
+    <nav class="dashboard-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>Admin - Manage Bookings</h2>
+            </div>
+            <div class="nav-menu">
+                <a href="admin-dashboard.html" class="btn btn-secondary btn-sm">Dashboard</a>
+                <a href="admin-users.html" class="btn btn-secondary btn-sm">Manage Users</a>
+                <a href="admin-sessions.html" class="btn btn-secondary btn-sm">Manage Sessions</a>
+                <a href="admin-bookings.html" class="btn btn-primary btn-sm">Manage Bookings</a>
+                <button id="logoutBtn" class="btn btn-logout btn-sm">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="dashboard-container">
+        
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-content" style="display: flex; justify-content: space-between; align-items: center;">
+                <h1>Booking Management</h1>
+                <button class="btn btn-primary" onclick="openCreateModal()" style="text-decoration: none;">+ Create Booking</button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-box">
+            <select id="statusFilter" onchange="applyFilters()">
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="queued">Queued</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+
+        <!-- Bookings Table -->
+        <div class="table-container">
+            <div id="loading" style="text-align: center; padding: 20px;">Loading bookings...</div>
+            <table id="bookingsTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Image</th>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Session</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="bookingsTableBody">
+                </tbody>
+            </table>
+            <div id="noBookings" style="display: none; text-align: center; padding: 20px; color: #6b7280;">
+                No bookings found.
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Create Booking Modal -->
+    <div id="createBookingModal" class="modal">
+        <div class="modal-content">
+            <h2>Create Booking for Member</h2>
+            <form id="createBookingForm">
+                <div class="form-group">
+                    <label>Select Member *</label>
+                    <select id="userId" required>
+                        <option value="">Loading users...</option>
+                    </select>
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">Select a gym member to create a booking for</small>
+                </div>
+                <div class="form-group">
+                    <label>Select Gym Session *</label>
+                    <select id="gymSessionId" required>
+                        <option value="">Loading sessions...</option>
+                    </select>
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">Select a gym session to book</small>
+                </div>
+                <div class="form-group">
+                    <label>Booking Status *</label>
+                    <select id="bookingStatus" required>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="queued">Queued</option>
+                    </select>
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">Confirmed: Direct booking | Queued: Waitlist if session is full</small>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;" id="createBookingBtn">Create Booking</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateModal()" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        let allBookings = [];
+
+        // Check authentication and admin role
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (!apiClient.isAuthenticated()) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Verify admin role
+            try {
+                const userResponse = await apiClient.get('/user');
+                if (userResponse.success && userResponse.data.success) {
+                    const user = userResponse.data.data.user;
+                    if (user.role !== 'admin') {
+                        window.location.href = 'dashboard.html';
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking admin access:', error);
+                window.location.href = 'login.html';
+                return;
+            }
+
+            await loadBookings();
+            setupEventListeners();
+        });
+
+        async function loadBookings() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('bookingsTable').style.display = 'none';
+                document.getElementById('noBookings').style.display = 'none';
+
+                const response = await apiClient.get('/admin/bookings');
+                
+                if (response.success && response.data.success) {
+                    allBookings = response.data.data;
+                    displayBookings(allBookings);
+                } else {
+                    showToast('Failed to load bookings: ' + (response.data?.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+                showToast('Failed to load bookings. Please refresh the page.', 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function displayBookings(bookings) {
+            const tbody = document.getElementById('bookingsTableBody');
+            tbody.innerHTML = '';
+
+            if (bookings.length === 0) {
+                document.getElementById('noBookings').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('bookingsTable').style.display = 'table';
+
+            // Default image for sessions
+            const defaultImage = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'60\' height=\'60\'%3E%3Crect width=\'60\' height=\'60\' fill=\'%23e5e7eb\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%239ca3af\' font-size=\'10\'%3ENo Image%3C/text%3E%3C/svg%3E';
+            
+            bookings.forEach(booking => {
+                const imageUrl = booking.gym_session?.image || defaultImage;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${booking.id}</td>
+                    <td>
+                        <img src="${imageUrl}" alt="${escapeHtml(booking.gym_session.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db;" onerror="this.src='${defaultImage}'">
+                    </td>
+                    <td>${escapeHtml(booking.user.name)}</td>
+                    <td>${escapeHtml(booking.user.email)}</td>
+                    <td>${escapeHtml(booking.gym_session.name)}</td>
+                    <td>${booking.gym_session.date}</td>
+                    <td>${booking.gym_session.start_time} - ${booking.gym_session.end_time}</td>
+                    <td><span class="badge badge-${booking.status}">${escapeHtml(booking.status)}</span></td>
+                    <td style="white-space: nowrap;">
+                        ${booking.status !== 'confirmed' && booking.status !== 'cancelled' ? `<button class="btn btn-primary btn-sm" onclick="confirmBooking(${booking.id})" style="background: #10b981;">Confirm</button>` : ''}
+                        ${booking.status !== 'cancelled' && booking.status !== 'confirmed' ? `<button class="btn btn-logout btn-sm" onclick="cancelBooking(${booking.id})" style="background: #ef4444;">Cancel</button>` : ''}
+                        <span onclick="deleteBooking(${booking.id})" style="cursor: pointer; color: #ef4444; font-size: 18px; margin-left: 8px; padding: 4px 8px;" title="Delete booking">🗑️</span>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function applyFilters() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            let filtered = allBookings;
+
+            if (statusFilter) {
+                filtered = filtered.filter(booking => booking.status === statusFilter);
+            }
+
+            displayBookings(filtered);
+        }
+
+        function setupEventListeners() {
+            document.getElementById('createBookingForm').addEventListener('submit', handleCreateBooking);
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+        }
+
+        // Toast notification helper
+        function showToast(message, type = 'success') {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.onmouseenter = Swal.stopTimer;
+                    toast.onmouseleave = Swal.resumeTimer;
+                }
+            });
+
+            Toast.fire({
+                icon: type,
+                title: message
+            });
+        }
+
+        window.openCreateModal = async function() {
+            const modal = document.getElementById('createBookingModal');
+            modal.style.display = 'block';
+            
+            // Load users and sessions
+            await loadUsersForBooking();
+            await loadSessionsForBooking();
+        }
+
+        window.closeCreateModal = function() {
+            const modal = document.getElementById('createBookingModal');
+            modal.style.display = 'none';
+            document.getElementById('createBookingForm').reset();
+        }
+
+        async function loadUsersForBooking() {
+            try {
+                const response = await apiClient.get('/admin/users');
+                if (response.success && response.data.success) {
+                    const users = response.data.data;
+                    const select = document.getElementById('userId');
+                    select.innerHTML = '<option value="">Select a member...</option>';
+                    
+                    users.forEach(user => {
+                        if (user.role === 'user') { // Only show regular users (members)
+                            const option = document.createElement('option');
+                            option.value = user.id;
+                            option.textContent = `${user.firstname} ${user.lastname} (${user.email})`;
+                            if (user.membership_level) {
+                                option.textContent += ` - ${user.membership_level.name}`;
+                            }
+                            select.appendChild(option);
+                        }
+                    });
+                } else {
+                    showToast('Failed to load users', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showToast('Failed to load users', 'error');
+            }
+        }
+
+        async function loadSessionsForBooking() {
+            try {
+                const response = await apiClient.get('/sessions');
+                if (response.success && response.data.success) {
+                    const sessions = response.data.data;
+                    const select = document.getElementById('gymSessionId');
+                    select.innerHTML = '<option value="">Select a session...</option>';
+                    
+                    sessions.forEach(session => {
+                        const option = document.createElement('option');
+                        option.value = session.id;
+                        const date = new Date(session.date).toLocaleDateString();
+                        const spots = session.is_full ? 'FULL' : `${session.available_spots} spots left`;
+                        option.textContent = `${session.name} - ${date} (${session.start_time} - ${session.end_time}) - ${spots}`;
+                        option.disabled = session.is_full;
+                        select.appendChild(option);
+                    });
+                } else {
+                    showToast('Failed to load sessions', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                showToast('Failed to load sessions', 'error');
+            }
+        }
+
+        async function handleCreateBooking(e) {
+            e.preventDefault();
+            
+            const userId = document.getElementById('userId').value;
+            const gymSessionId = document.getElementById('gymSessionId').value;
+            const status = document.getElementById('bookingStatus').value;
+            const submitBtn = document.getElementById('createBookingBtn');
+            
+            if (!userId || !gymSessionId) {
+                showToast('Please select both member and session', 'error');
+                return;
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Creating...';
+
+                const response = await apiClient.post('/admin/bookings', {
+                    user_id: userId,
+                    gym_session_id: gymSessionId,
+                    status: status
+                });
+
+                if (response.success && response.data.success) {
+                    showToast('Booking created successfully!', 'success');
+                    closeCreateModal();
+                    await loadBookings();
+                } else {
+                    const errorMsg = response.data?.message || 'Failed to create booking';
+                    const errors = response.data?.errors;
+                    if (errors) {
+                        const errorList = Object.values(errors).flat().join(', ');
+                        showToast(errorList, 'error');
+                    } else {
+                        showToast(errorMsg, 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Error creating booking:', error);
+                const errorMsg = error.message || 'Failed to create booking. Please try again.';
+                showToast(errorMsg, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Booking';
+            }
+        }
+
+        window.confirmBooking = async function(bookingId) {
+            const result = await Swal.fire({
+                title: 'Confirm Booking?',
+                text: 'This will confirm the booking.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, confirm it!'
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            try {
+                const response = await apiClient.put(`/admin/bookings/${bookingId}`, { status: 'confirmed' });
+
+                if (response.success && response.data.success) {
+                    showToast('Booking confirmed successfully!', 'success');
+                    await loadBookings();
+                } else {
+                    showToast('Error: ' + (response.data?.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error confirming booking:', error);
+                showToast('Failed to confirm booking. Please try again.', 'error');
+            }
+        }
+
+        window.cancelBooking = async function(bookingId) {
+            const result = await Swal.fire({
+                title: 'Cancel Booking?',
+                text: 'This will cancel the booking.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, cancel it!'
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            try {
+                const response = await apiClient.put(`/admin/bookings/${bookingId}`, { status: 'cancelled' });
+
+                if (response.success && response.data.success) {
+                    showToast('Booking cancelled successfully!', 'success');
+                    await loadBookings();
+                } else {
+                    showToast('Error: ' + (response.data?.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error cancelling booking:', error);
+                showToast('Failed to cancel booking. Please try again.', 'error');
+            }
+        }
+
+        window.deleteBooking = async function(bookingId) {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: 'This booking will be permanently deleted!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            try {
+                const response = await apiClient.delete(`/admin/bookings/${bookingId}`);
+                if (response.success && response.data.success) {
+                    showToast('Booking deleted successfully!', 'success');
+                    await loadBookings();
+                } else {
+                    showToast('Error: ' + (response.data?.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting booking:', error);
+                showToast('Failed to delete booking. Please try again.', 'error');
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await apiClient.post('/logout');
+                apiClient.removeToken();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                apiClient.removeToken();
+                window.location.href = 'login.html';
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const createModal = document.getElementById('createBookingModal');
+            if (event.target === createModal) {
+                closeCreateModal();
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+

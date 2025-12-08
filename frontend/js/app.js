@@ -3,22 +3,23 @@
  * Handles authentication tokens and API communication
  */
 
-// Load configuration - make sure config.js is loaded before this file
-// Prevent redeclaration if app.js is loaded twice
-if (typeof API_BASE_URL === 'undefined') {
-    var API_BASE_URL = (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.API_BASE_URL)
-        ? window.CONFIG.API_BASE_URL
-        : (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) 
-        ? CONFIG.API_BASE_URL 
-        : 'http://127.0.0.1:8000/api'; // Fallback for local development
-
-    // Debug: Log the API URL being used
-    console.log('API_BASE_URL loaded:', API_BASE_URL);
-    console.log('CONFIG available:', typeof window !== 'undefined' ? window.CONFIG : 'window not available');
-    console.log('CONFIG.API_BASE_URL:', typeof window !== 'undefined' && window.CONFIG ? window.CONFIG.API_BASE_URL : 'not available');
+// Prevent script from running twice
+if (typeof window.APP_JS_LOADED !== 'undefined') {
+    console.warn('app.js already loaded, skipping...');
 } else {
-    console.log('API_BASE_URL already defined, skipping redeclaration');
-}
+    window.APP_JS_LOADED = true;
+
+// Load configuration - make sure config.js is loaded before this file
+var API_BASE_URL = (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.API_BASE_URL)
+    ? window.CONFIG.API_BASE_URL
+    : (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) 
+    ? CONFIG.API_BASE_URL 
+    : 'http://127.0.0.1:8000/api'; // Fallback for local development
+
+// Debug: Log the API URL being used
+console.log('API_BASE_URL loaded:', API_BASE_URL);
+console.log('CONFIG available:', typeof window !== 'undefined' ? window.CONFIG : 'window not available');
+console.log('CONFIG.API_BASE_URL:', typeof window !== 'undefined' && window.CONFIG ? window.CONFIG.API_BASE_URL : 'not available');
 
 class ApiClient {
     constructor() {
@@ -430,16 +431,20 @@ class ApiClient {
 }
 
 // Create a singleton instance (prevent redeclaration)
-if (typeof apiClient === 'undefined') {
-    var apiClient = new ApiClient();
+if (typeof window.apiClient === 'undefined') {
+    window.apiClient = new ApiClient();
+    var apiClient = window.apiClient; // For backward compatibility
 } else {
     console.log('apiClient already exists, using existing instance');
+    var apiClient = window.apiClient; // Use existing instance
 }
 
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = apiClient;
 }
+
+} // End of APP_JS_LOADED check
 
 
 

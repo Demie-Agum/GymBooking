@@ -18,7 +18,11 @@ var API_BASE_URL = (typeof window !== 'undefined' && window.CONFIG && window.CON
     ? window.CONFIG.API_BASE_URL
     : (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) 
     ? CONFIG.API_BASE_URL 
-    : 'http://127.0.0.1:8000/api'; // Fallback for local development
+    : 'https://muccs.site/gym/backend/public/api'; // Production URL
+
+if (!API_BASE_URL) {
+    console.error('API_BASE_URL is not defined! Make sure config.js is loaded before app.js');
+}
 
 console.log('API_BASE_URL loaded:', API_BASE_URL);
 

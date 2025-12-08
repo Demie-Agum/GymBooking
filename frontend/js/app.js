@@ -418,10 +418,8 @@ class ApiClient {
     }
 }
 
-// Create a singleton instance - only if it doesn't exist
-if (typeof apiClient === 'undefined') {
-    var apiClient = new ApiClient();
-}
+// Create a singleton instance
+const apiClient = new ApiClient();
 
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {

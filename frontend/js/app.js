@@ -440,7 +440,8 @@ if (typeof ApiClient === 'undefined') {
             $.ajax(ajaxOptions);
         });
     }
-    } // End of ApiClient class declaration check
+    } // End of ApiClient class
+} // End of ApiClient class declaration check
 
     // Create a singleton instance (prevent redeclaration)
     if (typeof window.apiClient === 'undefined') {

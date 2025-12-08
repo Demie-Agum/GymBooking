@@ -3,30 +3,32 @@
  * Handles authentication tokens and API communication
  */
 
-// Prevent script from running twice
-if (typeof window.APP_JS_LOADED !== 'undefined') {
-    console.warn('app.js already loaded, using existing apiClient...');
-    // Make sure apiClient is available globally even if script runs twice
-    if (typeof apiClient === 'undefined' && typeof window.apiClient !== 'undefined') {
-        var apiClient = window.apiClient;
+// Prevent script from running twice - wrap everything in IIFE
+(function() {
+    if (typeof window.APP_JS_LOADED !== 'undefined') {
+        console.warn('app.js already loaded, using existing apiClient...');
+        // Make sure apiClient is available globally even if script runs twice
+        if (typeof apiClient === 'undefined' && typeof window.apiClient !== 'undefined') {
+            var apiClient = window.apiClient;
+        }
+        return; // Exit early - don't run the rest of the script
     }
-} else {
     window.APP_JS_LOADED = true;
 
-// Load configuration - make sure config.js is loaded before this file
-var API_BASE_URL = (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.API_BASE_URL)
-    ? window.CONFIG.API_BASE_URL
-    : (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) 
-    ? CONFIG.API_BASE_URL 
-    : 'https://muccs.site/gym/backend/public/api'; // Production URL
+    // Load configuration - make sure config.js is loaded before this file
+    var API_BASE_URL = (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.API_BASE_URL)
+        ? window.CONFIG.API_BASE_URL
+        : (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) 
+        ? CONFIG.API_BASE_URL 
+        : 'https://muccs.site/gym/backend/public/api'; // Production URL
 
-if (!API_BASE_URL) {
-    console.error('API_BASE_URL is not defined! Make sure config.js is loaded before app.js');
-}
+    if (!API_BASE_URL) {
+        console.error('API_BASE_URL is not defined! Make sure config.js is loaded before app.js');
+    }
 
-console.log('API_BASE_URL loaded:', API_BASE_URL);
+    console.log('API_BASE_URL loaded:', API_BASE_URL);
 
-class ApiClient {
+    class ApiClient {
     constructor() {
         this.baseURL = API_BASE_URL;
     }
@@ -432,21 +434,29 @@ class ApiClient {
             $.ajax(ajaxOptions);
         });
     }
-}
+    }
 
-// Create a singleton instance - only if it doesn't exist
-if (typeof apiClient === 'undefined') {
-    var apiClient = new ApiClient();
-    // Make it available globally
+    // Create a singleton instance - only if it doesn't exist
+    if (typeof apiClient === 'undefined') {
+        var apiClient = new ApiClient();
+        // Make it available globally
+        window.apiClient = apiClient;
+    } else {
+        // Use existing instance
+        var apiClient = window.apiClient || apiClient;
+    }
+
+    // Export for use in other files
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = apiClient;
+    }
+
+    // Make apiClient available globally outside IIFE
     window.apiClient = apiClient;
-} else {
-    // Use existing instance
-    var apiClient = window.apiClient || apiClient;
-}
+    
+})(); // End of IIFE - prevents script from running twice
 
-// Export for use in other files
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = apiClient;
+// Ensure apiClient is always available globally (outside IIFE)
+if (typeof apiClient === 'undefined' && typeof window.apiClient !== 'undefined') {
+    var apiClient = window.apiClient;
 }
-
-} // End of APP_JS_LOADED check

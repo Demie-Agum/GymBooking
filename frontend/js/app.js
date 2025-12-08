@@ -4,13 +4,26 @@
  */
 
 // Load configuration - make sure config.js is loaded before this file
-const API_BASE_URL = (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) 
-    ? CONFIG.API_BASE_URL 
-    : 'http://127.0.0.1:8000/api'; // Fallback for local development
+// Prevent redeclaration if app.js is loaded twice
+if (typeof API_BASE_URL === 'undefined') {
+    var API_BASE_URL = (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.API_BASE_URL)
+        ? window.CONFIG.API_BASE_URL
+        : (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) 
+        ? CONFIG.API_BASE_URL 
+        : 'http://127.0.0.1:8000/api'; // Fallback for local development
+
+    // Debug: Log the API URL being used
+    console.log('API_BASE_URL loaded:', API_BASE_URL);
+    console.log('CONFIG available:', typeof window !== 'undefined' ? window.CONFIG : 'window not available');
+    console.log('CONFIG.API_BASE_URL:', typeof window !== 'undefined' && window.CONFIG ? window.CONFIG.API_BASE_URL : 'not available');
+} else {
+    console.log('API_BASE_URL already defined, skipping redeclaration');
+}
 
 class ApiClient {
     constructor() {
         this.baseURL = API_BASE_URL;
+        console.log('ApiClient initialized with baseURL:', this.baseURL);
     }
 
     /**
@@ -416,8 +429,12 @@ class ApiClient {
     }
 }
 
-// Create a singleton instance
-const apiClient = new ApiClient();
+// Create a singleton instance (prevent redeclaration)
+if (typeof apiClient === 'undefined') {
+    var apiClient = new ApiClient();
+} else {
+    console.log('apiClient already exists, using existing instance');
+}
 
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {

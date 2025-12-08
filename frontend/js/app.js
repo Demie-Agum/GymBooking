@@ -3,12 +3,24 @@
  * Handles authentication tokens and API communication
  */
 
+// Prevent script from running twice
+if (typeof window.APP_JS_LOADED !== 'undefined') {
+    console.warn('app.js already loaded, using existing apiClient...');
+    // Make sure apiClient is available globally even if script runs twice
+    if (typeof apiClient === 'undefined' && typeof window.apiClient !== 'undefined') {
+        var apiClient = window.apiClient;
+    }
+} else {
+    window.APP_JS_LOADED = true;
+
 // Load configuration - make sure config.js is loaded before this file
-const API_BASE_URL = (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.API_BASE_URL)
+var API_BASE_URL = (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.API_BASE_URL)
     ? window.CONFIG.API_BASE_URL
     : (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) 
     ? CONFIG.API_BASE_URL 
     : 'http://127.0.0.1:8000/api'; // Fallback for local development
+
+console.log('API_BASE_URL loaded:', API_BASE_URL);
 
 class ApiClient {
     constructor() {
@@ -418,10 +430,19 @@ class ApiClient {
     }
 }
 
-// Create a singleton instance
-const apiClient = new ApiClient();
+// Create a singleton instance - only if it doesn't exist
+if (typeof apiClient === 'undefined') {
+    var apiClient = new ApiClient();
+    // Make it available globally
+    window.apiClient = apiClient;
+} else {
+    // Use existing instance
+    var apiClient = window.apiClient || apiClient;
+}
 
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = apiClient;
 }
+
+} // End of APP_JS_LOADED check

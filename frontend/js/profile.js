@@ -111,11 +111,15 @@ async function checkAuth() {
         const response = await apiClient.get('/user');
         console.log('Auth check response:', response);
         
-        if (response.success && response.data && response.data.success) {
-            const user = response.data.data.user;
-            // Store user with role for navigation
-            localStorage.setItem(USER_KEY, JSON.stringify(user));
-            return true;
+        if (response.success && response.data) {
+            // /user returns: { success: true, data: { user: { ... } } }
+            // apiClient wraps it: { success: true, status: 200, data: { success: true, data: { user: { ... } } } }
+            const user = response.data.data?.user || response.data.user;
+            if (user) {
+                // Store user with role for navigation
+                localStorage.setItem(USER_KEY, JSON.stringify(user));
+                return true;
+            }
         }
         
         console.warn('Auth check failed - response not successful');
@@ -169,12 +173,19 @@ async function loadUserProfile() {
         console.log('Response data:', response.data);
         
         if (response && response.success && response.data) {
-            const freshUser = response.data;
+            // /profile returns: { success: true, data: { id, firstname, ... } }
+            // apiClient wraps it: { success: true, status: 200, data: { success: true, data: { id, firstname, ... } } }
+            const freshUser = response.data.data || response.data;
             console.log('Fresh user data received:', freshUser);
-            localStorage.setItem(USER_KEY, JSON.stringify(freshUser));
-            displayUserInfo(freshUser);
-            console.log('=== loadUserProfile SUCCESS (from /profile) ===');
-            return;
+            
+            if (freshUser && freshUser.firstname) {
+                localStorage.setItem(USER_KEY, JSON.stringify(freshUser));
+                displayUserInfo(freshUser);
+                console.log('=== loadUserProfile SUCCESS (from /profile) ===');
+                return;
+            } else {
+                console.warn('Profile endpoint returned invalid user data:', freshUser);
+            }
         } else {
             console.warn('Profile endpoint returned unsuccessful response:', response);
         }
@@ -196,32 +207,29 @@ async function loadUserProfile() {
         console.log('User response data:', userResponse.data);
         
         if (userResponse && userResponse.success && userResponse.data) {
-            // Check if data has nested structure (userResponse.data.data.user) or direct (userResponse.data.user)
-            const freshUser = userResponse.data.user || userResponse.data.data?.user || userResponse.data;
+            // /user returns: { success: true, data: { user: { id, firstname, ... } } }
+            // apiClient wraps it: { success: true, status: 200, data: { success: true, data: { user: { ... } } } }
+            const freshUser = userResponse.data.data?.user || userResponse.data.user || userResponse.data;
             console.log('User from /user endpoint:', freshUser);
             
-            // Merge with existing user data to preserve profile_picture
-            const existingUser = getUser();
-            const mergedUser = {
-                ...freshUser,
-                profile_picture: freshUser.profile_picture || existingUser?.profile_picture || null
-            };
-            
-            console.log('Merged user data:', mergedUser);
-            localStorage.setItem(USER_KEY, JSON.stringify(mergedUser));
-            displayUserInfo(mergedUser);
-            console.log('=== loadUserProfile SUCCESS (from /user) ===');
-            return;
+            if (freshUser && freshUser.firstname) {
+                // Merge with existing user data to preserve profile_picture
+                const existingUser = getUser();
+                const mergedUser = {
+                    ...freshUser,
+                    profile_picture: freshUser.profile_picture || existingUser?.profile_picture || null
+                };
+                
+                console.log('Merged user data:', mergedUser);
+                localStorage.setItem(USER_KEY, JSON.stringify(mergedUser));
+                displayUserInfo(mergedUser);
+                console.log('=== loadUserProfile SUCCESS (from /user) ===');
+                return;
+            } else {
+                console.error('User endpoint returned invalid user data:', freshUser);
+            }
         } else {
             console.error('User endpoint returned unsuccessful response:', userResponse);
-            // Show error but don't block - display cached data if available
-            if (user && user.firstname) {
-                console.log('Using cached data due to API failure');
-                displayUserInfo(user);
-            } else {
-                console.error('No cached data available, showing error');
-                showToast('Failed to load profile data', 'error');
-            }
         }
     } catch (userError) {
         console.error('Error fetching from /user:', userError);
@@ -230,14 +238,15 @@ async function loadUserProfile() {
             data: userError.data,
             status: userError.status
         });
-        // Show error but don't block - display cached data if available
-        if (user && user.firstname) {
-            console.log('Using cached data due to API error');
-            displayUserInfo(user);
-        } else {
-            console.error('No cached data available, showing error');
-            showToast('Failed to load profile data. Please refresh the page.', 'error');
-        }
+    }
+    
+    // If we get here, both API calls failed - use cached data if available
+    if (user && user.firstname) {
+        console.log('Using cached data due to API failure');
+        displayUserInfo(user);
+    } else {
+        console.error('No cached data available, showing error');
+        showToast('Failed to load profile data. Please refresh the page.', 'error');
     }
     
     console.log('=== loadUserProfile END ===');
@@ -849,12 +858,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log('Profile page: Fetching user role from API...');
                 try {
                     const response = await apiClient.get('/user');
-                    if (response.success && response.data && response.data.success) {
-                        const userData = response.data.data.user;
-                        console.log('Profile page: Got user data from API:', userData);
-                        // Store user with role
-                        localStorage.setItem(USER_KEY, JSON.stringify(userData));
-                        updateNavigation(userData);
+                    if (response.success && response.data) {
+                        // /user returns: { success: true, data: { user: { ... } } }
+                        // apiClient wraps it: { success: true, status: 200, data: { success: true, data: { user: { ... } } } }
+                        const userData = response.data.data?.user || response.data.user;
+                        if (userData) {
+                            console.log('Profile page: Got user data from API:', userData);
+                            // Store user with role
+                            localStorage.setItem(USER_KEY, JSON.stringify(userData));
+                            updateNavigation(userData);
+                        } else {
+                            console.warn('Profile page: No user data in API response:', response);
+                            if (user) {
+                                updateNavigation(user);
+                            }
+                        }
                     } else {
                         console.warn('Profile page: API response not successful:', response);
                         // Still try to update with whatever user data we have

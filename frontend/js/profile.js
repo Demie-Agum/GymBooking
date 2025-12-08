@@ -168,8 +168,8 @@ async function loadUserProfile() {
         console.log('Response success:', response.success);
         console.log('Response data:', response.data);
         
-        if (response && response.success && response.data && response.data.success) {
-            const freshUser = response.data.data;
+        if (response && response.success && response.data) {
+            const freshUser = response.data;
             console.log('Fresh user data received:', freshUser);
             localStorage.setItem(USER_KEY, JSON.stringify(freshUser));
             displayUserInfo(freshUser);
@@ -195,8 +195,9 @@ async function loadUserProfile() {
         console.log('User response success:', userResponse.success);
         console.log('User response data:', userResponse.data);
         
-        if (userResponse && userResponse.success && userResponse.data && userResponse.data.success) {
-            const freshUser = userResponse.data.data.user;
+        if (userResponse && userResponse.success && userResponse.data) {
+            // Check if data has nested structure (userResponse.data.data.user) or direct (userResponse.data.user)
+            const freshUser = userResponse.data.user || userResponse.data.data?.user || userResponse.data;
             console.log('User from /user endpoint:', freshUser);
             
             // Merge with existing user data to preserve profile_picture

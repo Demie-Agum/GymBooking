@@ -5,11 +5,17 @@
 
 // Prevent script from running twice
 if (typeof window.APP_JS_LOADED !== 'undefined') {
-    console.warn('app.js already loaded, skipping...');
-    // Use existing apiClient if available
+    console.warn('app.js already loaded, using existing apiClient...');
+    // Make sure apiClient is available globally even if script runs twice
     if (typeof window.apiClient !== 'undefined') {
-        var apiClient = window.apiClient;
+        // Create global apiClient variable from window.apiClient
+        if (typeof apiClient === 'undefined') {
+            var apiClient = window.apiClient;
+        }
+    } else {
+        console.error('apiClient not found on window object!');
     }
+    // Exit early - don't redeclare anything
 } else {
     window.APP_JS_LOADED = true;
 
@@ -439,11 +445,10 @@ if (typeof ApiClient === 'undefined') {
     // Create a singleton instance (prevent redeclaration)
     if (typeof window.apiClient === 'undefined') {
         window.apiClient = new ApiClient();
-        var apiClient = window.apiClient; // For backward compatibility
-    } else {
-        console.log('apiClient already exists, using existing instance');
-        var apiClient = window.apiClient; // Use existing instance
     }
+    
+    // Always make apiClient available globally
+    var apiClient = window.apiClient;
 
     // Export for use in other files
     if (typeof module !== 'undefined' && module.exports) {
@@ -451,6 +456,11 @@ if (typeof ApiClient === 'undefined') {
     }
 
 } // End of APP_JS_LOADED check
+
+// Ensure apiClient is always available globally, even if script was skipped
+if (typeof apiClient === 'undefined' && typeof window.apiClient !== 'undefined') {
+    var apiClient = window.apiClient;
+}
 
 
 

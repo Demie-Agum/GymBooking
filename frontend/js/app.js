@@ -6,6 +6,10 @@
 // Prevent script from running twice
 if (typeof window.APP_JS_LOADED !== 'undefined') {
     console.warn('app.js already loaded, skipping...');
+    // Use existing apiClient if available
+    if (typeof window.apiClient !== 'undefined') {
+        var apiClient = window.apiClient;
+    }
 } else {
     window.APP_JS_LOADED = true;
 
@@ -21,7 +25,9 @@ console.log('API_BASE_URL loaded:', API_BASE_URL);
 console.log('CONFIG available:', typeof window !== 'undefined' ? window.CONFIG : 'window not available');
 console.log('CONFIG.API_BASE_URL:', typeof window !== 'undefined' && window.CONFIG ? window.CONFIG.API_BASE_URL : 'not available');
 
-class ApiClient {
+// Only declare ApiClient if it doesn't exist
+if (typeof ApiClient === 'undefined') {
+    class ApiClient {
     constructor() {
         this.baseURL = API_BASE_URL;
         console.log('ApiClient initialized with baseURL:', this.baseURL);
@@ -428,21 +434,21 @@ class ApiClient {
             $.ajax(ajaxOptions);
         });
     }
-}
+    } // End of ApiClient class declaration check
 
-// Create a singleton instance (prevent redeclaration)
-if (typeof window.apiClient === 'undefined') {
-    window.apiClient = new ApiClient();
-    var apiClient = window.apiClient; // For backward compatibility
-} else {
-    console.log('apiClient already exists, using existing instance');
-    var apiClient = window.apiClient; // Use existing instance
-}
+    // Create a singleton instance (prevent redeclaration)
+    if (typeof window.apiClient === 'undefined') {
+        window.apiClient = new ApiClient();
+        var apiClient = window.apiClient; // For backward compatibility
+    } else {
+        console.log('apiClient already exists, using existing instance');
+        var apiClient = window.apiClient; // Use existing instance
+    }
 
-// Export for use in other files
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = apiClient;
-}
+    // Export for use in other files
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = apiClient;
+    }
 
 } // End of APP_JS_LOADED check
 

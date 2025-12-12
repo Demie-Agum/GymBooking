@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Bookings - Staff</title>
+    <title>Manage Bookings - Staff</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/dashboard.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
     <style>
@@ -44,6 +45,51 @@
         .badge-confirmed { background: #10b981; color: white; }
         .badge-queued { background: #f59e0b; color: white; }
         .badge-cancelled { background: #6b7280; color: white; }
+        .badge-pending { background: #3b82f6; color: white; }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 14px;
+            margin: 0 4px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .modal.show {
+            display: block !important;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-group small {
+            font-size: 0.875rem;
+        }
         .filter-box {
             margin-bottom: 20px;
             display: flex;
@@ -63,7 +109,7 @@
     <nav class="dashboard-nav">
         <div class="nav-container">
             <div class="nav-brand">
-                <h2>Staff - View Bookings</h2>
+                <h2>Staff - Manage Bookings</h2>
             </div>
             <div class="nav-menu">
                 <a href="staff-dashboard.html" class="btn btn-secondary btn-sm">Dashboard</a>
@@ -80,8 +126,9 @@
         
         <!-- Header -->
         <div class="dashboard-header">
-            <div class="header-content">
-                <h1>All Bookings</h1>
+            <div class="header-content" style="display: flex; justify-content: space-between; align-items: center;">
+                <h1>Booking Management</h1>
+                <button class="btn btn-primary" onclick="openCreateModal()" style="text-decoration: none;">+ Create Booking</button>
             </div>
         </div>
 
@@ -89,6 +136,7 @@
         <div class="filter-box">
             <select id="statusFilter" onchange="applyFilters()">
                 <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
                 <option value="confirmed">Confirmed</option>
                 <option value="queued">Queued</option>
                 <option value="cancelled">Cancelled</option>
@@ -109,7 +157,6 @@
                         <th>Date</th>
                         <th>Time</th>
                         <th>Status</th>
-                        <th>Created</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -123,8 +170,63 @@
 
     </div>
 
+    <!-- Create Booking Modal -->
+    <div id="createBookingModal" class="modal">
+        <div class="modal-content">
+            <h2>Create Booking for Member</h2>
+            <form id="createBookingForm">
+                <div class="form-group">
+                    <label>Select Member *</label>
+                    <select id="userId" required>
+                        <option value="">Loading users...</option>
+                    </select>
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">Select a gym member to create a booking for</small>
+                </div>
+                <div class="form-group">
+                    <label>Select Gym Session *</label>
+                    <select id="gymSessionId" required>
+                        <option value="">Loading sessions...</option>
+                    </select>
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">Select a gym session to book</small>
+                </div>
+                <div class="form-group">
+                    <label>Booking Status *</label>
+                    <select id="bookingStatus" required>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="queued">Queued</option>
+                    </select>
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">Confirmed: Direct booking | Queued: Waitlist if session is full</small>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;" id="createBookingBtn">Create Booking</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateModal()" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         let allBookings = [];
+
+        // Toast notification helper
+        function showToast(message, type = 'success') {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.onmouseenter = Swal.stopTimer;
+                    toast.onmouseleave = Swal.resumeTimer;
+                }
+            });
+
+            Toast.fire({
+                icon: type,
+                title: message
+            });
+        }
 
         // Check authentication and staff role
         document.addEventListener('DOMContentLoaded', async function() {
@@ -165,11 +267,11 @@
                     allBookings = response.data.data;
                     displayBookings(allBookings);
                 } else {
-                    alert('Failed to load bookings: ' + (response.data?.message || 'Unknown error'));
+                    showToast('Failed to load bookings: ' + (response.data?.message || 'Unknown error'), 'error');
                 }
             } catch (error) {
                 console.error('Error loading bookings:', error);
-                alert('Failed to load bookings. Please refresh the page.');
+                showToast('Failed to load bookings. Please refresh the page.', 'error');
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
@@ -204,9 +306,10 @@
                     <td>${booking.gym_session.date}</td>
                     <td>${booking.gym_session.start_time} - ${booking.gym_session.end_time}</td>
                     <td><span class="badge badge-${booking.status}">${escapeHtml(booking.status)}</span></td>
-                    <td>${createdDate}</td>
-                    <td>
+                    <td style="white-space: nowrap;">
+                        ${booking.status !== 'confirmed' && booking.status !== 'cancelled' ? `<button class="btn btn-primary btn-sm" onclick="confirmBooking(${booking.id})" style="background: #10b981;">Confirm</button>` : ''}
                         ${booking.status !== 'cancelled' && booking.status !== 'confirmed' ? `<button class="btn btn-logout btn-sm" onclick="cancelBooking(${booking.id})" style="background: #ef4444;">Cancel</button>` : ''}
+                        <span onclick="deleteBooking(${booking.id})" style="cursor: pointer; color: #ef4444; font-size: 18px; margin-left: 8px; padding: 4px 8px;" title="Delete booking">🗑️</span>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -225,25 +328,214 @@
         }
 
         function setupEventListeners() {
+            document.getElementById('createBookingForm').addEventListener('submit', handleCreateBooking);
             document.getElementById('logoutBtn').addEventListener('click', handleLogout);
         }
 
+        window.openCreateModal = async function() {
+            const modal = document.getElementById('createBookingModal');
+            modal.style.display = 'block';
+            modal.classList.add('show');
+            
+            // Load users and sessions
+            await loadUsersForBooking();
+            await loadSessionsForBooking();
+        }
+
+        window.closeCreateModal = function() {
+            const modal = document.getElementById('createBookingModal');
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+            document.getElementById('createBookingForm').reset();
+        }
+
+        async function loadUsersForBooking() {
+            try {
+                const response = await apiClient.get('/staff/users');
+                if (response.success && response.data.success) {
+                    const users = response.data.data;
+                    const select = document.getElementById('userId');
+                    select.innerHTML = '<option value="">Select a member...</option>';
+                    
+                    users.forEach(user => {
+                        if (user.role === 'user') { // Only show regular users (members)
+                            const option = document.createElement('option');
+                            option.value = user.id;
+                            option.textContent = `${user.firstname} ${user.lastname} (${user.email})`;
+                            if (user.membership_level) {
+                                option.textContent += ` - ${user.membership_level.name}`;
+                            }
+                            select.appendChild(option);
+                        }
+                    });
+                } else {
+                    showToast('Failed to load users', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showToast('Failed to load users', 'error');
+            }
+        }
+
+        async function loadSessionsForBooking() {
+            try {
+                const response = await apiClient.get('/sessions');
+                if (response.success && response.data.success) {
+                    const sessions = response.data.data;
+                    const select = document.getElementById('gymSessionId');
+                    select.innerHTML = '<option value="">Select a session...</option>';
+                    
+                    sessions.forEach(session => {
+                        const option = document.createElement('option');
+                        option.value = session.id;
+                        const date = new Date(session.date).toLocaleDateString();
+                        const spots = session.is_full ? 'FULL' : `${session.available_spots} spots left`;
+                        option.textContent = `${session.name} - ${date} (${session.start_time} - ${session.end_time}) - ${spots}`;
+                        option.disabled = session.is_full;
+                        select.appendChild(option);
+                    });
+                } else {
+                    showToast('Failed to load sessions', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                showToast('Failed to load sessions', 'error');
+            }
+        }
+
+        async function handleCreateBooking(e) {
+            e.preventDefault();
+            
+            const userId = document.getElementById('userId').value;
+            const gymSessionId = document.getElementById('gymSessionId').value;
+            const status = document.getElementById('bookingStatus').value;
+            const submitBtn = document.getElementById('createBookingBtn');
+            
+            if (!userId || !gymSessionId) {
+                showToast('Please select both member and session', 'error');
+                return;
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Creating...';
+
+                const response = await apiClient.post('/staff/bookings', {
+                    user_id: userId,
+                    gym_session_id: gymSessionId,
+                    status: status
+                });
+
+                if (response.success && response.data.success) {
+                    showToast('Booking created successfully!', 'success');
+                    closeCreateModal();
+                    await loadBookings();
+                } else {
+                    const errorMsg = response.data?.message || 'Failed to create booking';
+                    const errors = response.data?.errors;
+                    if (errors) {
+                        const errorList = Object.values(errors).flat().join(', ');
+                        showToast(errorList, 'error');
+                    } else {
+                        showToast(errorMsg, 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Error creating booking:', error);
+                const errorMsg = error.message || 'Failed to create booking. Please try again.';
+                showToast(errorMsg, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Booking';
+            }
+        }
+
+        window.confirmBooking = async function(bookingId) {
+            const result = await Swal.fire({
+                title: 'Confirm Booking?',
+                text: 'This will confirm the booking.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, confirm it!'
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            try {
+                const response = await apiClient.put(`/staff/bookings/${bookingId}`, { status: 'confirmed' });
+
+                if (response.success && response.data.success) {
+                    showToast('Booking confirmed successfully!', 'success');
+                    await loadBookings();
+                } else {
+                    showToast('Error: ' + (response.data?.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error confirming booking:', error);
+                showToast('Failed to confirm booking. Please try again.', 'error');
+            }
+        }
+
         async function cancelBooking(bookingId) {
-            if (!confirm('Are you sure you want to cancel this booking?')) {
+            const result = await Swal.fire({
+                title: 'Cancel Booking?',
+                text: 'This will cancel the booking.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, cancel it!'
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            try {
+                const response = await apiClient.put(`/staff/bookings/${bookingId}`, { status: 'cancelled' });
+
+                if (response.success && response.data.success) {
+                    showToast('Booking cancelled successfully!', 'success');
+                    await loadBookings();
+                } else {
+                    showToast('Error: ' + (response.data?.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error cancelling booking:', error);
+                showToast('Failed to cancel booking. Please try again.', 'error');
+            }
+        }
+
+        window.deleteBooking = async function(bookingId) {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: 'This booking will be permanently deleted!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (!result.isConfirmed) {
                 return;
             }
 
             try {
                 const response = await apiClient.delete(`/staff/bookings/${bookingId}`);
                 if (response.success && response.data.success) {
-                    alert('Booking cancelled successfully!');
+                    showToast('Booking deleted successfully!', 'success');
                     await loadBookings();
                 } else {
-                    alert('Error: ' + (response.data?.message || 'Unknown error'));
+                    showToast('Error: ' + (response.data?.message || 'Unknown error'), 'error');
                 }
             } catch (error) {
-                console.error('Error cancelling booking:', error);
-                alert('Failed to cancel booking. Please try again.');
+                console.error('Error deleting booking:', error);
+                showToast('Failed to delete booking. Please try again.', 'error');
             }
         }
 
@@ -264,6 +556,14 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const createModal = document.getElementById('createBookingModal');
+            if (event.target === createModal) {
+                closeCreateModal();
+            }
         }
     </script>
 </body>

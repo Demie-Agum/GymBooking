@@ -127,15 +127,20 @@ async function loadBookingDetails() {
     if (errorMsg) errorMsg.style.display = 'none';
 
     try {
-        const response = await apiClient.get(`/sessions/${sessionId}`, false);
+        // Load session and user data in parallel
+        const [sessionResponse, userResponse] = await Promise.all([
+            apiClient.get(`/sessions/${sessionId}`, false),
+            apiClient.get('/user')
+        ]);
 
         if (loading) loading.style.display = 'none';
 
-        if (response.success && response.data.success) {
-            const session = response.data.data;
-            displayBookingDetails(session);
+        if (sessionResponse.success && sessionResponse.data.success) {
+            const session = sessionResponse.data.data;
+            const user = userResponse.success && userResponse.data.success ? userResponse.data.data.user : null;
+            displayBookingDetails(session, user);
         } else {
-            showError(response.data.message || 'Failed to load session details');
+            showError(sessionResponse.data.message || 'Failed to load session details');
         }
     } catch (error) {
         if (loading) loading.style.display = 'none';
@@ -147,13 +152,68 @@ async function loadBookingDetails() {
 /**
  * Display booking details
  */
-function displayBookingDetails(session) {
+function displayBookingDetails(session, user = null) {
     const bookingDetails = document.getElementById('booking-details');
     if (!bookingDetails) return;
 
     // Default image - you can replace this with a local image path like 'images/default-session.png'
     const defaultImage = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'300\'%3E%3Crect width=\'800\' height=\'300\' fill=\'%23e5e7eb\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%239ca3af\' font-size=\'24\' font-weight=\'bold\'%3EGym Session%3C/text%3E%3C/svg%3E';
     const imageUrl = session.image || defaultImage;
+
+    // Check subscription status
+    let subscriptionHtml = '';
+    let canBook = !session.is_full;
+    let bookingDisabled = session.is_full;
+    let bookingButtonText = session.is_full ? 'Session Full' : 'Book This Session';
+    
+    if (user) {
+        if (!user.membership_level) {
+            subscriptionHtml = `
+                <div style="background: #fee2e2; color: #991b1b; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #ef4444;">
+                    <p style="margin: 0; font-weight: 600;">⚠️ No Membership</p>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">You need a membership level to book sessions. Please contact admin.</p>
+                </div>
+            `;
+            canBook = false;
+            bookingDisabled = true;
+            bookingButtonText = 'Cannot Book - No Membership';
+        } else if (user.subscription_expires_at) {
+            const expiryDate = new Date(user.subscription_expires_at);
+            const daysUntil = user.days_until_expiry;
+            const isExpired = daysUntil === 0 || expiryDate < new Date();
+            
+            if (isExpired) {
+                subscriptionHtml = `
+                    <div style="background: #fee2e2; color: #991b1b; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #ef4444;">
+                        <p style="margin: 0; font-weight: 600;">⚠️ Subscription Expired</p>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">Your subscription expired on ${formatDate(user.subscription_expires_at)}. Please renew your membership to book sessions.</p>
+                    </div>
+                `;
+                canBook = false;
+                bookingDisabled = true;
+                bookingButtonText = 'Cannot Book - Subscription Expired';
+            } else if (user.subscription_expiring_soon) {
+                subscriptionHtml = `
+                    <div style="background: #fef3c7; color: #92400e; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #f59e0b;">
+                        <p style="margin: 0; font-weight: 600;">⚠️ Subscription Expiring Soon</p>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">Your subscription expires in ${daysUntil} day${daysUntil !== 1 ? 's' : ''} (${formatDate(user.subscription_expires_at)}). Please renew soon.</p>
+                    </div>
+                `;
+            } else {
+                subscriptionHtml = `
+                    <div style="background: #d1fae5; color: #065f46; padding: 0.75rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #10b981;">
+                        <p style="margin: 0; font-size: 0.9rem;"><strong>Subscription:</strong> Active (${daysUntil} days remaining)</p>
+                    </div>
+                `;
+            }
+        } else {
+            subscriptionHtml = `
+                <div style="background: #d1fae5; color: #065f46; padding: 0.75rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #10b981;">
+                    <p style="margin: 0; font-size: 0.9rem;"><strong>Subscription:</strong> Active (No Expiry)</p>
+                </div>
+            `;
+        }
+    }
 
     bookingDetails.innerHTML = `
         <div class="booking-card">
@@ -166,11 +226,12 @@ function displayBookingDetails(session) {
                 <p><strong>Time:</strong> ${formatTime(session.start_time)} - ${formatTime(session.end_time)}</p>
                 <p><strong>Capacity:</strong> ${session.capacity} attendees</p>
                 <p><strong>Available Spots:</strong> ${session.available_spots}</p>
+                ${subscriptionHtml}
                 ${session.is_full ? '<p class="warning">This session is full. Platinum members will be added to the queue.</p>' : ''}
             </div>
-            <button id="book-btn" class="btn btn-primary ${session.is_full ? 'disabled' : ''}" 
-                    onclick="bookSession(${session.id})" ${session.is_full ? 'disabled' : ''}>
-                ${session.is_full ? 'Session Full' : 'Book This Session'}
+            <button id="book-btn" class="btn btn-primary ${bookingDisabled ? 'disabled' : ''}" 
+                    onclick="bookSession(${session.id})" ${bookingDisabled ? 'disabled' : ''}>
+                ${bookingButtonText}
             </button>
         </div>
     `;
@@ -220,6 +281,13 @@ async function bookSession(sessionId) {
             
             console.error('Booking failed:', errorMessage);
             showToast(errorMessage, 'error');
+            
+            // If subscription expired, reload booking details to show updated status
+            if (errorMessage.includes('subscription') || errorMessage.includes('expired')) {
+                setTimeout(() => {
+                    loadBookingDetails();
+                }, 1000);
+            }
             
             if (bookBtn) {
                 bookBtn.disabled = false;

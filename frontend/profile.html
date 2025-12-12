@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="css/profile.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="js/app.js"></script>
 </head>
 <body class="dashboard-page" data-theme="light">
     
@@ -131,6 +130,31 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="info-row" id="membershipInfoRow" style="display: none;">
+                        <div class="info-item">
+                            <svg class="info-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div class="info-content">
+                                <span class="info-label">Membership Level</span>
+                                <span id="infoMembershipLevel" class="info-value">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-row" id="subscriptionInfoRow" style="display: none;">
+                        <div class="info-item">
+                            <svg class="info-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div class="info-content">
+                                <span class="info-label">Subscription Expiry</span>
+                                <span id="infoSubscriptionExpiry" class="info-value">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="subscriptionWarning" style="display: none; margin-top: 1rem;"></div>
                 </div>
             </div>
         </div>
@@ -223,7 +247,7 @@
     </div>
 
     <script src="js/config.js"></script>
-       <script src="js/app.js"></script>
+    <script src="js/app.js"></script>
     <script src="js/profile.js"></script>
 </body>
 </html>

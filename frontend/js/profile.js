@@ -116,9 +116,9 @@ async function checkAuth() {
             // apiClient wraps it: { success: true, status: 200, data: { success: true, data: { user: { ... } } } }
             const user = response.data.data?.user || response.data.user;
             if (user) {
-                // Store user with role for navigation
-                localStorage.setItem(USER_KEY, JSON.stringify(user));
-                return true;
+            // Store user with role for navigation
+            localStorage.setItem(USER_KEY, JSON.stringify(user));
+            return true;
             }
         }
         
@@ -179,10 +179,10 @@ async function loadUserProfile() {
             console.log('Fresh user data received:', freshUser);
             
             if (freshUser && freshUser.firstname) {
-                localStorage.setItem(USER_KEY, JSON.stringify(freshUser));
-                displayUserInfo(freshUser);
-                console.log('=== loadUserProfile SUCCESS (from /profile) ===');
-                return;
+            localStorage.setItem(USER_KEY, JSON.stringify(freshUser));
+            displayUserInfo(freshUser);
+            console.log('=== loadUserProfile SUCCESS (from /profile) ===');
+            return;
             } else {
                 console.warn('Profile endpoint returned invalid user data:', freshUser);
             }
@@ -213,22 +213,22 @@ async function loadUserProfile() {
             console.log('User from /user endpoint:', freshUser);
             
             if (freshUser && freshUser.firstname) {
-                // Merge with existing user data to preserve profile_picture
-                const existingUser = getUser();
-                const mergedUser = {
-                    ...freshUser,
-                    profile_picture: freshUser.profile_picture || existingUser?.profile_picture || null
-                };
-                
-                console.log('Merged user data:', mergedUser);
-                localStorage.setItem(USER_KEY, JSON.stringify(mergedUser));
-                displayUserInfo(mergedUser);
-                console.log('=== loadUserProfile SUCCESS (from /user) ===');
-                return;
-            } else {
+            // Merge with existing user data to preserve profile_picture
+            const existingUser = getUser();
+            const mergedUser = {
+                ...freshUser,
+                profile_picture: freshUser.profile_picture || existingUser?.profile_picture || null
+            };
+            
+            console.log('Merged user data:', mergedUser);
+            localStorage.setItem(USER_KEY, JSON.stringify(mergedUser));
+            displayUserInfo(mergedUser);
+            console.log('=== loadUserProfile SUCCESS (from /user) ===');
+            return;
+        } else {
                 console.error('User endpoint returned invalid user data:', freshUser);
             }
-        } else {
+            } else {
             console.error('User endpoint returned unsuccessful response:', userResponse);
         }
     } catch (userError) {
@@ -241,12 +241,12 @@ async function loadUserProfile() {
     }
     
     // If we get here, both API calls failed - use cached data if available
-    if (user && user.firstname) {
+        if (user && user.firstname) {
         console.log('Using cached data due to API failure');
-        displayUserInfo(user);
-    } else {
-        console.error('No cached data available, showing error');
-        showToast('Failed to load profile data. Please refresh the page.', 'error');
+            displayUserInfo(user);
+        } else {
+            console.error('No cached data available, showing error');
+            showToast('Failed to load profile data. Please refresh the page.', 'error');
     }
     
     console.log('=== loadUserProfile END ===');
@@ -352,6 +352,89 @@ function displayUserInfo(user) {
             };
         } else {
             console.error('profilePictureDisplay element not found!');
+        }
+
+        // Membership and Subscription Information
+        const membershipInfoRow = document.getElementById('membershipInfoRow');
+        const subscriptionInfoRow = document.getElementById('subscriptionInfoRow');
+        const subscriptionWarning = document.getElementById('subscriptionWarning');
+        
+        if (user.membership_level) {
+            // Show membership level
+            if (membershipInfoRow) {
+                membershipInfoRow.style.display = 'flex';
+                const infoMembershipLevel = document.getElementById('infoMembershipLevel');
+                if (infoMembershipLevel) {
+                    infoMembershipLevel.textContent = user.membership_level.name || 'N/A';
+                }
+            }
+
+            // Show subscription expiry
+            if (subscriptionInfoRow) {
+                subscriptionInfoRow.style.display = 'flex';
+                const infoSubscriptionExpiry = document.getElementById('infoSubscriptionExpiry');
+                
+                if (!user.subscription_expires_at) {
+                    if (infoSubscriptionExpiry) {
+                        infoSubscriptionExpiry.innerHTML = '<span style="color: #10b981; font-weight: 600;">No Expiry</span>';
+                    }
+                } else {
+                    const expiryDate = new Date(user.subscription_expires_at);
+                    const formattedDate = formatDate(user.subscription_expires_at);
+                    const daysUntil = user.days_until_expiry;
+                    
+                    let statusColor = '#10b981';
+                    let statusText = 'Active';
+                    
+                    if (daysUntil === 0 || expiryDate < new Date()) {
+                        statusColor = '#ef4444';
+                        statusText = 'Expired';
+                    } else if (user.subscription_expiring_soon) {
+                        statusColor = '#f59e0b';
+                        statusText = `Expiring Soon (${daysUntil} days)`;
+                    } else {
+                        statusText = `${daysUntil} days remaining`;
+                    }
+                    
+                    if (infoSubscriptionExpiry) {
+                        infoSubscriptionExpiry.innerHTML = `
+                            <div>
+                                <span style="color: ${statusColor}; font-weight: 600;">${statusText}</span>
+                                <br>
+                                <small style="color: #6b7280; font-size: 0.85rem;">${formattedDate}</small>
+                            </div>
+                        `;
+                    }
+
+                    // Show warning if expiring soon or expired
+                    if (subscriptionWarning) {
+                        if (daysUntil === 0 || expiryDate < new Date()) {
+                            subscriptionWarning.style.display = 'block';
+                            subscriptionWarning.innerHTML = `
+                                <div style="padding: 1rem; background: #fee2e2; border-left: 4px solid #ef4444; border-radius: 4px;">
+                                    <p style="margin: 0; color: #991b1b; font-weight: 600;">⚠️ Your subscription has expired!</p>
+                                    <p style="margin: 0.5rem 0 0 0; color: #7f1d1d; font-size: 0.9rem;">Please renew your membership to continue booking sessions.</p>
+                                </div>
+                            `;
+                        } else if (user.subscription_expiring_soon) {
+                            subscriptionWarning.style.display = 'block';
+                            subscriptionWarning.innerHTML = `
+                                <div style="padding: 1rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
+                                    <p style="margin: 0; color: #92400e; font-weight: 600;">⚠️ Your subscription expires in ${daysUntil} day${daysUntil !== 1 ? 's' : ''}!</p>
+                                    <p style="margin: 0.5rem 0 0 0; color: #78350f; font-size: 0.9rem;">Please renew your membership soon to avoid interruption.</p>
+                                </div>
+                            `;
+                        } else {
+                            subscriptionWarning.style.display = 'none';
+                        }
+                    }
+                }
+            }
+        } else {
+            // Hide membership and subscription rows if no membership
+            if (membershipInfoRow) membershipInfoRow.style.display = 'none';
+            if (subscriptionInfoRow) subscriptionInfoRow.style.display = 'none';
+            if (subscriptionWarning) subscriptionWarning.style.display = 'none';
         }
         
         console.log('=== displayUserInfo SUCCESS ===');
@@ -863,10 +946,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                         // apiClient wraps it: { success: true, status: 200, data: { success: true, data: { user: { ... } } } }
                         const userData = response.data.data?.user || response.data.user;
                         if (userData) {
-                            console.log('Profile page: Got user data from API:', userData);
-                            // Store user with role
-                            localStorage.setItem(USER_KEY, JSON.stringify(userData));
-                            updateNavigation(userData);
+                        console.log('Profile page: Got user data from API:', userData);
+                        // Store user with role
+                        localStorage.setItem(USER_KEY, JSON.stringify(userData));
+                        updateNavigation(userData);
                         } else {
                             console.warn('Profile page: No user data in API response:', response);
                             if (user) {

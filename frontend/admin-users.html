@@ -652,31 +652,29 @@
                     const expiryInput = document.getElementById('subscription_expires_at');
                     if (!expiryInput) return;
                     
-                    // Only auto-calculate if expiry field is empty (not editing existing expiry)
-                    if (!expiryInput.value) {
-                        const selectedOption = this.options[this.selectedIndex];
-                        const durationDays = selectedOption.dataset.durationDays;
+                    // Always auto-calculate when membership level changes
+                    const selectedOption = this.options[this.selectedIndex];
+                    const durationDays = selectedOption.dataset.durationDays;
+                    
+                    if (durationDays && durationDays !== 'null' && durationDays !== '') {
+                        // Calculate expiry date from today + duration days
+                        const expiryDate = new Date();
+                        expiryDate.setDate(expiryDate.getDate() + parseInt(durationDays));
                         
-                        if (durationDays && durationDays !== 'null' && durationDays !== '') {
-                            // Calculate expiry date from today + duration days
-                            const expiryDate = new Date();
-                            expiryDate.setDate(expiryDate.getDate() + parseInt(durationDays));
-                            
-                            // Format for datetime-local input (YYYY-MM-DDTHH:mm)
-                            const year = expiryDate.getFullYear();
-                            const month = String(expiryDate.getMonth() + 1).padStart(2, '0');
-                            const day = String(expiryDate.getDate()).padStart(2, '0');
-                            const hours = String(expiryDate.getHours()).padStart(2, '0');
-                            const minutes = String(expiryDate.getMinutes()).padStart(2, '0');
-                            
-                            const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
-                            expiryInput.value = formattedDate;
-                            
-                            console.log(`Auto-calculated expiry date: ${formattedDate} (${durationDays} days from today)`);
-                        } else {
-                            // Free tier or no duration - clear expiry field
-                            expiryInput.value = '';
-                        }
+                        // Format for datetime-local input (YYYY-MM-DDTHH:mm)
+                        const year = expiryDate.getFullYear();
+                        const month = String(expiryDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(expiryDate.getDate()).padStart(2, '0');
+                        const hours = String(expiryDate.getHours()).padStart(2, '0');
+                        const minutes = String(expiryDate.getMinutes()).padStart(2, '0');
+                        
+                        const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+                        expiryInput.value = formattedDate;
+                        
+                        console.log(`Auto-calculated expiry date: ${formattedDate} (${durationDays} days from today)`);
+                    } else {
+                        // Free tier or no duration - clear expiry field
+                        expiryInput.value = '';
                     }
                 });
             }

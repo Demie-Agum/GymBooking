@@ -179,7 +179,7 @@ function displayBookingDetails(session, user = null) {
             bookingButtonText = 'Cannot Book - No Membership';
         } else if (user.subscription_expires_at) {
             const expiryDate = new Date(user.subscription_expires_at);
-            const daysUntil = user.days_until_expiry;
+            const daysUntil = user.days_until_expiry ? Math.floor(user.days_until_expiry) : null;
             const isExpired = daysUntil === 0 || expiryDate < new Date();
             
             if (isExpired) {

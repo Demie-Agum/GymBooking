@@ -381,7 +381,7 @@ function displayUserInfo(user) {
                 } else {
                     const expiryDate = new Date(user.subscription_expires_at);
                     const formattedDate = formatDate(user.subscription_expires_at);
-                    const daysUntil = user.days_until_expiry;
+                    const daysUntil = user.days_until_expiry ? Math.floor(user.days_until_expiry) : null;
                     
                     let statusColor = '#10b981';
                     let statusText = 'Active';

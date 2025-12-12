@@ -422,6 +422,7 @@
         let allUsers = [];
         let currentEditingId = null;
         let currentProfilePicture = null;
+        let membershipLevelsData = []; // Store membership levels with default_duration_days
 
         // Toast notification function
         function showToast(message, icon = 'success') {
@@ -644,15 +645,38 @@
                 });
             }
 
-            // Membership level change handler to optionally auto-calculate expiry
+            // Membership level change handler to auto-calculate expiry
             const membershipLevelSelect = document.getElementById('membership_level_id');
             if (membershipLevelSelect) {
                 membershipLevelSelect.addEventListener('change', function() {
                     const expiryInput = document.getElementById('subscription_expires_at');
+                    if (!expiryInput) return;
+                    
                     // Only auto-calculate if expiry field is empty (not editing existing expiry)
-                    if (expiryInput && !expiryInput.value) {
-                        // Backend will handle default duration calculation
-                        // We can leave it empty or show a hint
+                    if (!expiryInput.value) {
+                        const selectedOption = this.options[this.selectedIndex];
+                        const durationDays = selectedOption.dataset.durationDays;
+                        
+                        if (durationDays && durationDays !== 'null' && durationDays !== '') {
+                            // Calculate expiry date from today + duration days
+                            const expiryDate = new Date();
+                            expiryDate.setDate(expiryDate.getDate() + parseInt(durationDays));
+                            
+                            // Format for datetime-local input (YYYY-MM-DDTHH:mm)
+                            const year = expiryDate.getFullYear();
+                            const month = String(expiryDate.getMonth() + 1).padStart(2, '0');
+                            const day = String(expiryDate.getDate()).padStart(2, '0');
+                            const hours = String(expiryDate.getHours()).padStart(2, '0');
+                            const minutes = String(expiryDate.getMinutes()).padStart(2, '0');
+                            
+                            const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+                            expiryInput.value = formattedDate;
+                            
+                            console.log(`Auto-calculated expiry date: ${formattedDate} (${durationDays} days from today)`);
+                        } else {
+                            // Free tier or no duration - clear expiry field
+                            expiryInput.value = '';
+                        }
                     }
                 });
             }
@@ -744,9 +768,13 @@
                 select.innerHTML = '<option value="">None</option>';
                 
                 if (levels && levels.length > 0) {
+                    // Store membership levels data for auto-calculation
+                    membershipLevelsData = levels;
+                    
                     levels.forEach(level => {
                         const option = document.createElement('option');
                         option.value = level.id;
+                        option.dataset.durationDays = level.default_duration_days || '';
                         const limitText = level.weekly_limit === null ? 'Unlimited' : `${level.weekly_limit} per week`;
                         option.textContent = `${level.name} (${limitText})`;
                         select.appendChild(option);

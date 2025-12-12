@@ -62,6 +62,10 @@
         .badge-user { background: #10b981; color: white; }
         .badge-verified { background: #10b981; color: white; }
         .badge-unverified { background: #6b7280; color: white; }
+        .badge-subscription-active { background: #10b981; color: white; }
+        .badge-subscription-expiring { background: #f59e0b; color: white; }
+        .badge-subscription-expired { background: #ef4444; color: white; }
+        .badge-subscription-none { background: #6b7280; color: white; }
         .profile-picture {
             width: 40px;
             height: 40px;
@@ -330,6 +334,7 @@
                         <th>Role</th>
                         <th>Verified</th>
                         <th>Membership</th>
+                        <th>Subscription Expiry</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -385,6 +390,11 @@
                         <!-- Dynamically loaded from API -->
                     </select>
                     <small style="color: #6b7280; display: block; margin-top: 5px;">Select membership level for this user (only for User role)</small>
+                </div>
+                <div class="form-group" id="subscriptionExpiryGroup" style="display: none;">
+                    <label>Subscription Expiry Date</label>
+                    <input type="datetime-local" id="subscription_expires_at">
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">Leave empty to use default duration from membership level, or set custom expiry date</small>
                 </div>
                 <div class="form-group">
                     <label>Email Verified</label>
@@ -487,6 +497,47 @@
             }
         }
 
+        function getSubscriptionExpiryHtml(user) {
+            if (!user.membership_level) {
+                return '<span class="badge badge-subscription-none">No Membership</span>';
+            }
+            
+            if (!user.subscription_expires_at) {
+                return '<span class="badge badge-subscription-active">No Expiry</span>';
+            }
+            
+            const expiryDate = new Date(user.subscription_expires_at);
+            const now = new Date();
+            const daysUntil = user.days_until_expiry;
+            
+            let statusClass = 'badge-subscription-active';
+            let statusText = 'Active';
+            
+            if (daysUntil === 0 || expiryDate < now) {
+                statusClass = 'badge-subscription-expired';
+                statusText = 'Expired';
+            } else if (user.subscription_expiring_soon) {
+                statusClass = 'badge-subscription-expiring';
+                statusText = `Expiring Soon (${daysUntil} days)`;
+            } else {
+                statusText = `${daysUntil} days left`;
+            }
+            
+            const formattedDate = expiryDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            return `
+                <div>
+                    <span class="badge ${statusClass}">${statusText}</span>
+                    <br>
+                    <small style="color: #6b7280; font-size: 11px;">${formattedDate}</small>
+                </div>
+            `;
+        }
+
         function displayUsers(users) {
             const tbody = document.getElementById('usersTableBody');
             tbody.innerHTML = '';
@@ -532,6 +583,9 @@
                     <td><span class="badge badge-${user.role}">${escapeHtml(user.role)}</span></td>
                     <td><span class="badge ${user.is_verified ? 'badge-verified' : 'badge-unverified'}">${user.is_verified ? 'Verified' : 'Unverified'}</span></td>
                     <td>${user.membership_level ? escapeHtml(user.membership_level.name) : 'None'}</td>
+                    <td>
+                        ${getSubscriptionExpiryHtml(user)}
+                    </td>
                     <td>
                         <button class="btn btn-secondary btn-sm" onclick="window.editUser(${user.id})" type="button">Edit</button>
                         <button class="btn btn-logout btn-sm" onclick="window.deleteUser(${user.id})" type="button" ${user.id === currentEditingId ? 'disabled' : ''}>Delete</button>
@@ -587,6 +641,19 @@
             if (roleSelect) {
                 roleSelect.addEventListener('change', function() {
                     toggleMembershipLevelField();
+                });
+            }
+
+            // Membership level change handler to optionally auto-calculate expiry
+            const membershipLevelSelect = document.getElementById('membership_level_id');
+            if (membershipLevelSelect) {
+                membershipLevelSelect.addEventListener('change', function() {
+                    const expiryInput = document.getElementById('subscription_expires_at');
+                    // Only auto-calculate if expiry field is empty (not editing existing expiry)
+                    if (expiryInput && !expiryInput.value) {
+                        // Backend will handle default duration calculation
+                        // We can leave it empty or show a hint
+                    }
                 });
             }
             
@@ -713,13 +780,17 @@
         function toggleMembershipLevelField() {
             const roleSelect = document.getElementById('role');
             const membershipLevelGroup = document.getElementById('membershipLevelGroup');
+            const subscriptionExpiryGroup = document.getElementById('subscriptionExpiryGroup');
             if (roleSelect && membershipLevelGroup) {
                 if (roleSelect.value === 'user') {
                     membershipLevelGroup.style.display = 'block';
+                    if (subscriptionExpiryGroup) subscriptionExpiryGroup.style.display = 'block';
                 } else {
                     membershipLevelGroup.style.display = 'none';
+                    if (subscriptionExpiryGroup) subscriptionExpiryGroup.style.display = 'none';
                     // Clear selection when hidden
                     document.getElementById('membership_level_id').value = '';
+                    document.getElementById('subscription_expires_at').value = '';
                 }
             }
         }
@@ -781,6 +852,16 @@
                             } else {
                                 document.getElementById('membership_level_id').value = '';
                             }
+                            
+                            // Set subscription expiry date
+                            if (user.subscription_expires_at) {
+                                const expiryDate = new Date(user.subscription_expires_at);
+                                // Format for datetime-local input (YYYY-MM-DDTHH:mm)
+                                const formattedDate = expiryDate.toISOString().slice(0, 16);
+                                document.getElementById('subscription_expires_at').value = formattedDate;
+                            } else {
+                                document.getElementById('subscription_expires_at').value = '';
+                            }
                         }, 200);
                         
                         // Show profile picture section for editing
@@ -813,6 +894,7 @@
                 document.getElementById('passwordLabel').textContent = 'Password *';
                 document.getElementById('passwordHint').textContent = '';
                 document.getElementById('membership_level_id').value = '';
+                document.getElementById('subscription_expires_at').value = '';
                 if (profilePictureGroup) profilePictureGroup.style.display = 'none';
                 if (profilePictureImg) profilePictureImg.style.display = 'none';
                 currentProfilePicture = null;
@@ -835,6 +917,9 @@
         function closeModal() {
             console.log('closeModal called');
             const modal = document.getElementById('userModal');
+            if (modal) {
+                document.getElementById('subscription_expires_at').value = '';
+            }
             if (modal) {
                 modal.style.display = 'none';
                 modal.classList.remove('show');
@@ -878,6 +963,15 @@
                 formData.membership_level_id = parseInt(membershipLevelId);
             } else if (formData.role === 'user' && !membershipLevelId) {
                 formData.membership_level_id = null;
+            }
+
+            // Add subscription expiry date if provided
+            const subscriptionExpiresAt = document.getElementById('subscription_expires_at').value;
+            if (formData.role === 'user' && subscriptionExpiresAt) {
+                formData.subscription_expires_at = subscriptionExpiresAt;
+            } else if (formData.role === 'user' && !subscriptionExpiresAt) {
+                // If no expiry date provided, backend will calculate from membership level default
+                formData.subscription_expires_at = null;
             }
 
             const password = document.getElementById('password').value;

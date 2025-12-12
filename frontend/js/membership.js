@@ -140,7 +140,7 @@ async function displayMembershipInfo() {
                 month: 'long', 
                 day: 'numeric' 
             });
-            const daysUntil = user.days_until_expiry;
+            const daysUntil = user.days_until_expiry ? Math.floor(user.days_until_expiry) : null;
             
             let statusColor = '#10b981';
             let statusText = 'Active';

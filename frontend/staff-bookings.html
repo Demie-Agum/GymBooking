@@ -208,6 +208,9 @@
     <script>
         let allBookings = [];
 
+        // Default image for sessions (same as admin and other pages)
+        const DEFAULT_SESSION_IMAGE = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'60\' height=\'60\'%3E%3Crect width=\'60\' height=\'60\' fill=\'%23e5e7eb\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%239ca3af\' font-size=\'10\'%3ENo Image%3C/text%3E%3C/svg%3E';
+
         // Toast notification helper
         function showToast(message, type = 'success') {
             const Toast = Swal.mixin({
@@ -287,18 +290,14 @@
             }
 
             document.getElementById('bookingsTable').style.display = 'table';
-
-            // Default image for sessions
-            const defaultImage = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'60\' height=\'60\'%3E%3Crect width=\'60\' height=\'60\' fill=\'%23e5e7eb\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%239ca3af\' font-size=\'10\'%3ENo Image%3C/text%3E%3C/svg%3E';
             
             bookings.forEach(booking => {
-                const imageUrl = booking.gym_session?.image || defaultImage;
+                const imageUrl = booking.gym_session?.image || DEFAULT_SESSION_IMAGE;
                 const row = document.createElement('tr');
-                const createdDate = new Date(booking.created_at).toLocaleDateString();
                 row.innerHTML = `
                     <td>${booking.id}</td>
                     <td>
-                        <img src="${imageUrl}" alt="${escapeHtml(booking.gym_session.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db;" onerror="this.src='${defaultImage}'">
+                        <img src="${imageUrl}" alt="${escapeHtml(booking.gym_session.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db;" onerror="this.src='${DEFAULT_SESSION_IMAGE}'">
                     </td>
                     <td>${escapeHtml(booking.user.name)}</td>
                     <td>${escapeHtml(booking.user.email)}</td>

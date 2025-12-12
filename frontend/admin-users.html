@@ -508,7 +508,7 @@
             
             const expiryDate = new Date(user.subscription_expires_at);
             const now = new Date();
-            const daysUntil = user.days_until_expiry;
+            const daysUntil = user.days_until_expiry ? Math.floor(user.days_until_expiry) : null;
             
             let statusClass = 'badge-subscription-active';
             let statusText = 'Active';

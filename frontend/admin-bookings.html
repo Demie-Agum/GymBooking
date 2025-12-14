@@ -540,13 +540,20 @@
 
         async function handleLogout() {
             try {
+                showToast('Logging out...', 'info');
                 await apiClient.post('/logout');
                 apiClient.removeToken();
-                window.location.href = 'login.html';
+                showToast('Logged out successfully', 'success');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
             } catch (error) {
                 console.error('Logout error:', error);
                 apiClient.removeToken();
-                window.location.href = 'login.html';
+                showToast('Logged out successfully', 'success');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
             }
         }
 

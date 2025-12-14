@@ -1080,22 +1080,28 @@
                 } else {
                     // Handle validation errors
                     console.error('Save failed:', response);
-                    const errorMsg = response.data?.message || 'Unknown error';
-                    let errorDetails = '';
-                    if (response.data?.errors) {
-                        const errors = response.data.errors;
-                        errorDetails = Object.keys(errors).map(key => {
-                            return `${key}: ${errors[key][0]}`;
-                        }).join('<br>');
-                    }
+                    const errors = response.data?.errors;
                     
-                    // Show detailed error in toast
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Save Failed',
-                        html: errorDetails || errorMsg,
-                        confirmButtonText: 'OK'
-                    });
+                    // Check if error is specifically about subscription_expires_at
+                    if (errors && errors.subscription_expires_at) {
+                        showToast('The subscription expires at field must be a date after today.', 'error');
+                    } else {
+                        const errorMsg = response.data?.message || 'Unknown error';
+                        let errorDetails = '';
+                        if (errors) {
+                            errorDetails = Object.keys(errors).map(key => {
+                                return `${key}: ${errors[key][0]}`;
+                            }).join('<br>');
+                        }
+                        
+                        // Show detailed error in toast
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Save Failed',
+                            html: errorDetails || errorMsg,
+                            confirmButtonText: 'OK'
+                        });
+                    }
                 }
             } catch (error) {
                 console.error('Error saving user:', error);
@@ -1105,19 +1111,25 @@
                     stack: error.stack
                 });
                 
-                let errorMessage = 'Failed to save user. Please try again.';
-                if (error.response?.data?.message) {
-                    errorMessage = error.response.data.message;
-                } else if (error.message) {
-                    errorMessage = error.message;
+                // Check if error is specifically about subscription_expires_at
+                const errors = error.response?.data?.errors;
+                if (errors && errors.subscription_expires_at) {
+                    showToast('The subscription expires at field must be a date after today.', 'error');
+                } else {
+                    let errorMessage = 'Failed to save user. Please try again.';
+                    if (error.response?.data?.message) {
+                        errorMessage = error.response.data.message;
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    }
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Save Failed',
+                        text: errorMessage,
+                        confirmButtonText: 'OK'
+                    });
                 }
-                
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Save Failed',
-                    text: errorMessage,
-                    confirmButtonText: 'OK'
-                });
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.textContent = originalText;

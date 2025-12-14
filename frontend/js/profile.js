@@ -862,6 +862,7 @@ function updateNavigation(user) {
         });
         
         if (role === 'staff') {
+            links.push({ href: 'staff-users.html', text: 'Manage Users' });
             links.push({ href: 'staff-sessions.html', text: 'Manage Sessions' });
             links.push({ href: 'staff-bookings.html', text: 'Manage Bookings' });
         } else {

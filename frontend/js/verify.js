@@ -50,6 +50,7 @@ let userEmail = '';
 
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
+    checkURLParameters(); // Check for OTP in URL first
     checkPendingVerification();
     setupOTPInputs();
     startResendTimer();
@@ -68,10 +69,57 @@ function initTheme() {
 }
 
 // ========================================
+// Check URL Parameters for OTP
+// ========================================
+
+function checkURLParameters() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const otpFromUrl = urlParams.get('otp');
+    const emailFromUrl = urlParams.get('email');
+    
+    // If email is in URL, use it and save to localStorage
+    if (emailFromUrl) {
+        userEmail = emailFromUrl;
+        localStorage.setItem(PENDING_EMAIL_KEY, emailFromUrl);
+        if (userEmailElement) {
+            userEmailElement.textContent = userEmail;
+        }
+    }
+    
+    // If OTP is in URL, auto-fill it
+    if (otpFromUrl && otpFromUrl.length === 6) {
+        // Fill OTP inputs
+        for (let i = 0; i < 6; i++) {
+            if (otpInputs[i]) {
+                otpInputs[i].value = otpFromUrl[i];
+                otpInputs[i].classList.add('filled');
+            }
+        }
+        
+        // Focus on last input
+        if (otpInputs[5]) {
+            otpInputs[5].focus();
+        }
+        
+        // Show message that OTP was auto-filled
+        showToast('Verification code loaded from email link!', 'success');
+        
+        // Clean URL (remove OTP from URL for security)
+        const newUrl = window.location.pathname + (emailFromUrl ? '?email=' + encodeURIComponent(emailFromUrl) : '');
+        window.history.replaceState({}, document.title, newUrl);
+    }
+}
+
+// ========================================
 // Check Pending Verification
 // ========================================
 
 function checkPendingVerification() {
+    // If email was already set from URL, skip localStorage check
+    if (userEmail) {
+        return;
+    }
+    
     const pendingEmail = localStorage.getItem(PENDING_EMAIL_KEY);
     
     if (!pendingEmail) {

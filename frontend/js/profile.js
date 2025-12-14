@@ -870,11 +870,11 @@ function updateNavigation(user) {
     // Create navigation links based on role
     const links = [];
     
-    if (role === 'staff' || role === 'admin') {
-        console.log('Creating staff/admin navigation');
-        // Staff/Admin navigation
+    if (role === 'staff' || role === 'admin' || role === 'super_admin') {
+        console.log('Creating staff/admin/super_admin navigation');
+        // Staff/Admin/Super Admin navigation
         links.push({
-            href: role === 'admin' ? 'admin-dashboard.html' : 'staff-dashboard.html',
+            href: (role === 'admin' || role === 'super_admin') ? 'admin-dashboard.html' : 'staff-dashboard.html',
             text: 'Dashboard'
         });
         
@@ -883,7 +883,7 @@ function updateNavigation(user) {
             links.push({ href: 'staff-sessions.html', text: 'Manage Sessions' });
             links.push({ href: 'staff-bookings.html', text: 'Manage Bookings' });
         } else {
-            // Admin navigation
+            // Admin or Super Admin navigation
             links.push({ href: 'admin-users.html', text: 'Manage Users' });
             links.push({ href: 'admin-sessions.html', text: 'Manage Sessions' });
             links.push({ href: 'admin-bookings.html', text: 'Manage Bookings' });

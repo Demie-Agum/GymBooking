@@ -817,38 +817,55 @@ function updateNavigation(user) {
     
     console.log('Profile link found:', profileLink);
     
-    // Check if navigation links already exist (except profile)
-    const existingNavLinks = navMenu.querySelectorAll('a.btn:not([href="profile.html"])');
+    // Check if navigation links already exist (except profile, theme toggle, and logout)
+    const existingNavLinks = navMenu.querySelectorAll('a.btn:not([href="profile.html"]):not([id]):not([id="logoutBtn"])');
     console.log('Existing nav links:', existingNavLinks.length);
     
-    if (existingNavLinks.length > 0 && navigationUpdated) {
-        // Navigation already set up, don't update again
-        console.log('Navigation already updated, skipping...');
-        return;
-    }
-    
-    // Clear existing navigation links (but keep theme toggle, profile, and logout)
+    // Always clear existing navigation links to ensure correct navigation based on role
+    // This ensures navigation is always correct, even if role changes
     existingNavLinks.forEach(link => {
         // Only remove if it's not the theme toggle or logout button
-        if (!link.id && link !== profileLink) {
-            console.log('Removing existing link:', link);
+        if (!link.id && link !== profileLink && !link.classList.contains('theme-toggle-btn')) {
+            console.log('Removing existing link:', link.textContent, link.href);
             link.remove();
         }
     });
     
     // Get user role - try to get from user object or fetch from API
-    let role = user?.role || 'user';
+    let role = user?.role;
     
     console.log('User role from parameter:', role);
+    console.log('Full user object:', user);
     
     // If role is not in user object, try to get it from the stored user data
-    if (!role || role === 'user') {
+    if (!role) {
         const storedUser = getUser();
-        role = storedUser?.role || 'user';
+        role = storedUser?.role;
         console.log('User role from storage:', role);
     }
     
+    // If still no role, try to get from API response structure
+    if (!role && user) {
+        // Check if user is nested in data structure
+        if (user.data && user.data.user) {
+            role = user.data.user.role;
+        } else if (user.user) {
+            role = user.user.role;
+        } else if (user.data && user.data.data && user.data.data.user) {
+            role = user.data.data.user.role;
+        }
+    }
+    
+    // Default to 'user' if still no role found
+    if (!role) {
+        role = 'user';
+        console.warn('No role found, defaulting to user');
+    }
+    
     console.log('Final role for navigation:', role);
+    
+    // Force update navigation even if already updated, to ensure correct role
+    navigationUpdated = false;
     
     // Create navigation links based on role
     const links = [];

@@ -284,7 +284,7 @@
                     const role = user.role || 'user';
                     
                     // Redirect based on role
-                    if (role === 'admin') {
+                    if (role === 'admin' || role === 'super_admin') {
                         window.location.href = 'admin-dashboard.html';
                         return;
                     } else if (role === 'staff') {

@@ -740,11 +740,60 @@
                     showToast('Session deleted successfully!', 'success');
                     await loadSessions();
                 } else {
-                    showToast('Error: ' + (response.data?.message || 'Unknown error'), 'error');
+                    // Check if error has booking details
+                    const errorData = response.data || {};
+                    const errorMsg = errorData.message || 'Unknown error';
+                    
+                    if (errorData.bookings_count !== undefined) {
+                        // Show detailed error with booking counts
+                        let details = `Total: ${errorData.bookings_count} booking(s)`;
+                        const counts = [];
+                        if (errorData.confirmed_count > 0) counts.push(`${errorData.confirmed_count} confirmed`);
+                        if (errorData.pending_count > 0) counts.push(`${errorData.pending_count} pending`);
+                        if (errorData.queued_count > 0) counts.push(`${errorData.queued_count} queued`);
+                        if (errorData.cancelled_count > 0) counts.push(`${errorData.cancelled_count} cancelled`);
+                        
+                        if (counts.length > 0) {
+                            details += ` (${counts.join(', ')})`;
+                        }
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Cannot Delete Session',
+                            html: `<p>${errorMsg}</p><p style="margin-top: 10px; font-size: 14px; color: #6b7280;">${details}</p><p style="margin-top: 10px; font-size: 13px;">Please cancel or delete all bookings first.</p>`,
+                            confirmButtonText: 'OK'
+                        });
+                    } else {
+                        showToast('Error: ' + errorMsg, 'error');
+                    }
                 }
             } catch (error) {
                 console.error('Error deleting session:', error);
-                showToast('Failed to delete session. Please try again.', 'error');
+                const errorMsg = error.response?.data?.message || error.message || 'Failed to delete session. Please try again.';
+                
+                // Check if error response has booking details
+                if (error.response?.data?.bookings_count !== undefined) {
+                    const errorData = error.response.data;
+                    let details = `Total: ${errorData.bookings_count} booking(s)`;
+                    const counts = [];
+                    if (errorData.confirmed_count > 0) counts.push(`${errorData.confirmed_count} confirmed`);
+                    if (errorData.pending_count > 0) counts.push(`${errorData.pending_count} pending`);
+                    if (errorData.queued_count > 0) counts.push(`${errorData.queued_count} queued`);
+                    if (errorData.cancelled_count > 0) counts.push(`${errorData.cancelled_count} cancelled`);
+                    
+                    if (counts.length > 0) {
+                        details += ` (${counts.join(', ')})`;
+                    }
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Cannot Delete Session',
+                        html: `<p>${errorMsg}</p><p style="margin-top: 10px; font-size: 14px; color: #6b7280;">${details}</p><p style="margin-top: 10px; font-size: 13px;">Please cancel or delete all bookings first.</p>`,
+                        confirmButtonText: 'OK'
+                    });
+                } else {
+                    showToast(errorMsg, 'error');
+                }
             }
         }
 

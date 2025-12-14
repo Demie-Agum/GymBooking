@@ -3,12 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gymbooking - Profile</title>
+    <title>Phonebook - Profile</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="css/profile.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Hamburger Menu */
+        .hamburger {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 1001;
+        }
+        
+        .hamburger span {
+            display: block;
+            width: 25px;
+            height: 3px;
+            background: var(--text);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(8px, 8px);
+        }
+        
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 1rem;
+            }
+            
+            .nav-brand {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+            
+            .nav-brand h2 {
+                font-size: 1.2rem;
+                margin-bottom: 0;
+            }
+            
+            .hamburger {
+                display: flex;
+            }
+            
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--card-bg);
+                border-top: 1px solid var(--border);
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                flex-direction: column;
+                gap: 0;
+                width: 100%;
+                padding: 1rem 0;
+                z-index: 1000;
+            }
+            
+            .nav-menu.active {
+                display: flex;
+            }
+            
+            .nav-menu .btn {
+                width: 100%;
+                text-align: left;
+                padding: 12px 1rem;
+                border-radius: 0;
+                font-size: 14px;
+                white-space: normal;
+                margin: 0;
+            }
+            
+            .profile-container {
+                padding: 1rem;
+            }
+            
+            .profile-card {
+                padding: 1.5rem;
+            }
+            
+            .profile-pic-large {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .profile-info-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .info-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+                padding: 15px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .nav-container {
+                padding: 0 0.5rem;
+            }
+            
+            .nav-brand h2 {
+                font-size: 1rem;
+            }
+            
+            .profile-container {
+                padding: 0.5rem;
+            }
+            
+            .profile-card {
+                padding: 1rem;
+            }
+            
+            .profile-pic-large {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .profile-name {
+                font-size: 1.2rem;
+            }
+            
+            .modal-content {
+                width: 98%;
+                margin: 5% auto;
+                padding: 12px;
+            }
+            
+            .form-input {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+        }
+    </style>
 </head>
 <body class="dashboard-page" data-theme="light">
     
@@ -16,7 +173,12 @@
     <nav class="dashboard-nav">
         <div class="nav-container">
             <div class="nav-brand">
-                <h2>Gymbooking</h2>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <h2>Phonebook</h2>
             </div>
             <div class="nav-menu" id="navMenu">
                 <button id="themeToggleProfile" class="theme-toggle-btn">
@@ -249,5 +411,42 @@
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
     <script src="js/profile.js"></script>
+    <script>
+        // Setup hamburger menu
+        function setupHamburgerMenu() {
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const navMenu = document.getElementById('navMenu');
+            
+            if (hamburgerBtn && navMenu) {
+                hamburgerBtn.addEventListener('click', function() {
+                    hamburgerBtn.classList.toggle('active');
+                    navMenu.classList.toggle('active');
+                });
+                
+                // Close menu when clicking on a link
+                const navLinks = navMenu.querySelectorAll('a, button');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        hamburgerBtn.classList.remove('active');
+                        navMenu.classList.remove('active');
+                    });
+                });
+                
+                // Close menu when clicking outside
+                document.addEventListener('click', function(event) {
+                    const isClickInsideNav = navMenu.contains(event.target) || hamburgerBtn.contains(event.target);
+                    if (!isClickInsideNav && navMenu.classList.contains('active')) {
+                        hamburgerBtn.classList.remove('active');
+                        navMenu.classList.remove('active');
+                    }
+                });
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setupHamburgerMenu();
+        });
+    </script>
 </body>
 </html>

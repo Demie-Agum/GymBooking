@@ -89,6 +89,85 @@
         .form-group small {
             font-size: 0.875rem;
         }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+                padding: 15px;
+            }
+            
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            table {
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 8px 6px;
+            }
+            
+            .btn-sm {
+                padding: 4px 8px;
+                font-size: 12px;
+                margin: 2px;
+            }
+            
+            .nav-menu {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .nav-menu .btn {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+            
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start !important;
+            }
+            
+            .form-group input,
+            .form-group select {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .modal-content {
+                width: 98%;
+                margin: 5% auto;
+                padding: 12px;
+            }
+            
+            table {
+                font-size: 12px;
+            }
+            
+            th, td {
+                padding: 6px 4px;
+            }
+            
+            .nav-menu .btn-sm {
+                padding: 4px 6px;
+                font-size: 11px;
+            }
+            
+            .dashboard-container {
+                padding: 1rem 0.5rem;
+            }
+        }
     </style>
 </head>
 <body class="dashboard-page" data-theme="light">

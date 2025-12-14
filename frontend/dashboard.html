@@ -233,6 +233,14 @@
                 border-radius: 0;
                 font-size: 14px;
                 display: block;
+                white-space: normal;
+                margin: 0;
+                text-decoration: none;
+            }
+            
+            .nav-links li {
+                width: 100%;
+                list-style: none;
             }
             
             .dashboard-container {
@@ -326,11 +334,11 @@
                 <span>🏋️ Gym Booking</span>
             </div>
             <ul class="nav-links" id="navMenu">
-                <li><a href="dashboard.html">Dashboard</a></li>
-                <li><a href="sessions.html">Browse Sessions</a></li>
-                <li><a href="my-bookings.html">My Bookings</a></li>
-                <li><a href="profile.html">Profile</a></li>
-                <li><button id="logoutBtn" class="btn btn-primary btn-sm" style="border: none; cursor: pointer;">Logout</button></li>
+                <li><a href="dashboard.html" class="btn btn-secondary btn-sm">Dashboard</a></li>
+                <li><a href="sessions.html" class="btn btn-secondary btn-sm">Browse Sessions</a></li>
+                <li><a href="my-bookings.html" class="btn btn-secondary btn-sm">My Bookings</a></li>
+                <li><a href="profile.html" class="btn btn-secondary btn-sm">Profile</a></li>
+                <li><button id="logoutBtn" class="btn btn-logout btn-sm" style="border: none; cursor: pointer;">Logout</button></li>
             </ul>
         </div>
     </nav>

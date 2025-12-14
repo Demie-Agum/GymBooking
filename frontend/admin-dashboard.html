@@ -17,7 +17,7 @@
     <nav class="dashboard-nav">
         <div class="nav-container">
             <div class="nav-brand">
-                <h2>Admin - Dashboard</h2>
+                <h2 id="dashboard-title">Admin - Dashboard</h2>
             </div>
             <div class="nav-menu">
                 <a href="admin-dashboard.html" class="btn btn-primary btn-sm">Dashboard</a>
@@ -88,16 +88,29 @@
                 return;
             }
 
-            // Verify admin role
+            // Verify admin or super admin role
             try {
                 const userResponse = await apiClient.get('/user');
                 if (userResponse.success && userResponse.data.success) {
                     const user = userResponse.data.data.user;
-                    if (user.role !== 'admin') {
+                    if (user.role !== 'admin' && user.role !== 'super_admin') {
                         window.location.href = 'dashboard.html';
                         return;
                     }
-                    document.getElementById('user-name').textContent = `Welcome, ${user.firstname} ${user.lastname}!`;
+                    const roleLabel = user.role === 'super_admin' ? 'Super Admin' : 'Admin';
+                    document.getElementById('user-name').textContent = `Welcome, ${user.firstname} ${user.lastname}! (${roleLabel})`;
+                    
+                    // Update dashboard title for Super Admin
+                    if (user.role === 'super_admin') {
+                        const titleElement = document.getElementById('dashboard-title');
+                        if (titleElement) {
+                            titleElement.textContent = 'Super Admin - Dashboard';
+                        }
+                        const headerTitle = document.querySelector('.dashboard-header h1');
+                        if (headerTitle) {
+                            headerTitle.textContent = 'Super Admin Dashboard';
+                        }
+                    }
                 } else {
                     console.error('Failed to get user data:', userResponse);
                     alert('Failed to load user data. Please login again.');

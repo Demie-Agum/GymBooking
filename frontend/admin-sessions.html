@@ -252,7 +252,7 @@
                 const userResponse = await apiClient.get('/user');
                 if (userResponse.success && userResponse.data.success) {
                     const user = userResponse.data.data.user;
-                    if (user.role !== 'admin') {
+                    if (user.role !== 'admin' && user.role !== 'super_admin') {
                         window.location.href = 'dashboard.html';
                         return;
                     }

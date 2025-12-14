@@ -665,28 +665,43 @@
                     window.closeModal();
                     await loadSessions();
                 } else {
-                    const errorMsg = response.data?.message || 'Unknown error';
-                    const errorDetail = response.data?.error || '';
                     const errors = response.data?.errors;
-                    let fullErrorMsg = errorMsg;
-                    if (errorDetail) {
-                        fullErrorMsg += ': ' + errorDetail;
-                    }
-                    if (errors) {
+                    let fullErrorMsg = '';
+                    
+                    // Prioritize showing validation error messages
+                    if (errors && Object.keys(errors).length > 0) {
                         const errorList = Object.values(errors).flat().join(', ');
-                        fullErrorMsg += ' ' + errorList;
+                        fullErrorMsg = errorList;
+                    } else {
+                        const errorMsg = response.data?.message || 'Unknown error';
+                        const errorDetail = response.data?.error || '';
+                        fullErrorMsg = errorMsg;
+                        if (errorDetail) {
+                            fullErrorMsg += ': ' + errorDetail;
+                        }
                     }
+                    
                     console.error('Session creation error:', response);
-                    showToast('Error: ' + fullErrorMsg, 'error');
+                    showToast(fullErrorMsg, 'error');
                 }
             } catch (error) {
                 console.error('Error saving session:', error);
-                const errorMsg = error.response?.data?.error || 
-                                error.response?.data?.message || 
-                                error.message || 
-                                'Unknown error';
+                const errors = error.response?.data?.errors;
+                let errorMsg = '';
+                
+                // Prioritize showing validation error messages
+                if (errors && Object.keys(errors).length > 0) {
+                    const errorList = Object.values(errors).flat().join(', ');
+                    errorMsg = errorList;
+                } else {
+                    errorMsg = error.response?.data?.error || 
+                              error.response?.data?.message || 
+                              error.message || 
+                              'Unknown error';
+                }
+                
                 console.error('Full error details:', error);
-                showToast('Failed to save session: ' + errorMsg, 'error');
+                showToast(errorMsg, 'error');
             }
         }
 

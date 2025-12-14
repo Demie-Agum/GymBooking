@@ -145,6 +145,120 @@
         .hidden {
             display: none;
         }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-wrapper {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+                padding: 0 1rem;
+            }
+            
+            .nav-brand {
+                font-size: 1.2rem;
+            }
+            
+            .nav-links {
+                flex-wrap: wrap;
+                gap: 1rem;
+                width: 100%;
+            }
+            
+            .nav-links a,
+            .nav-links .btn {
+                font-size: 0.9rem;
+                padding: 0.5rem 1rem;
+            }
+            
+            .dashboard-container {
+                padding: 1rem;
+            }
+            
+            .dashboard-header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+            }
+            
+            .stat-card {
+                padding: 1rem;
+            }
+            
+            .stat-card h3 {
+                font-size: 1.5rem;
+            }
+            
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .theme-toggle {
+                bottom: 1rem;
+                right: 1rem;
+                width: 45px;
+                height: 45px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .nav-wrapper {
+                padding: 0 0.5rem;
+            }
+            
+            .nav-brand {
+                font-size: 1rem;
+            }
+            
+            .nav-links {
+                flex-direction: column;
+                width: 100%;
+                gap: 0.5rem;
+            }
+            
+            .nav-links a,
+            .nav-links .btn {
+                width: 100%;
+                text-align: center;
+                padding: 0.6rem 1rem;
+            }
+            
+            .dashboard-container {
+                padding: 0.5rem;
+            }
+            
+            .dashboard-header h1 {
+                font-size: 1.2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .stat-card {
+                padding: 0.75rem;
+            }
+            
+            .stat-card h3 {
+                font-size: 1.25rem;
+            }
+            
+            .footer {
+                padding: 2rem 1rem 1rem;
+            }
+            
+            .theme-toggle {
+                width: 40px;
+                height: 40px;
+                bottom: 0.5rem;
+                right: 0.5rem;
+            }
+        }
     </style>
 </head>
 <body class="dashboard-page" data-theme="light">

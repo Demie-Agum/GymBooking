@@ -225,6 +225,18 @@
                 padding: 8px 6px;
             }
             
+            .nav-container {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+                padding: 0 1rem;
+            }
+            
+            .nav-brand h2 {
+                font-size: 1.2rem;
+                margin-bottom: 0;
+            }
+            
             .btn-sm {
                 padding: 4px 8px;
                 font-size: 12px;
@@ -233,18 +245,30 @@
             
             .nav-menu {
                 flex-wrap: wrap;
-                gap: 5px;
+                gap: 0.5rem;
+                width: 100%;
             }
             
             .nav-menu .btn {
-                font-size: 12px;
+                font-size: 11px;
                 padding: 6px 10px;
+                white-space: nowrap;
             }
             
             .dashboard-header {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 10px;
+            }
+            
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin: 10px 0;
+            }
+            
+            table {
+                min-width: 800px;
             }
             
             .form-group input,
@@ -254,14 +278,41 @@
         }
         
         @media (max-width: 480px) {
+            .nav-container {
+                padding: 0 0.5rem;
+            }
+            
+            .nav-brand h2 {
+                font-size: 1rem;
+            }
+            
+            .nav-menu {
+                flex-direction: column;
+                width: 100%;
+                gap: 0.5rem;
+            }
+            
+            .nav-menu .btn {
+                width: 100%;
+                font-size: 12px;
+                padding: 8px 12px;
+                text-align: center;
+                white-space: normal;
+            }
+            
             .modal-content {
                 width: 98%;
                 margin: 5% auto;
                 padding: 12px;
             }
             
+            .table-container {
+                margin: 5px 0;
+            }
+            
             table {
-                font-size: 12px;
+                font-size: 11px;
+                min-width: 700px;
             }
             
             th, td {

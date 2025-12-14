@@ -57,6 +57,7 @@
             font-size: 12px;
             font-weight: 600;
         }
+        .badge-super_admin { background: #8b5cf6; color: white; }
         .badge-admin { background: #ef4444; color: white; }
         .badge-staff { background: #f59e0b; color: white; }
         .badge-user { background: #10b981; color: white; }
@@ -380,7 +381,8 @@
                     <select id="role" required>
                         <option value="user">User</option>
                         <option value="staff">Staff</option>
-                        <option value="admin">Admin</option>
+                        <option value="admin" id="adminRoleOption">Admin</option>
+                        <option value="super_admin" id="superAdminRoleOption" style="display: none;">Super Admin</option>
                     </select>
                 </div>
                 <div class="form-group" id="membershipLevelGroup" style="display: none;">
@@ -423,6 +425,7 @@
         let currentEditingId = null;
         let currentProfilePicture = null;
         let membershipLevelsData = []; // Store membership levels with default_duration_days
+        let currentUserRole = null; // Store current logged-in user's role
 
         // Toast notification function
         function showToast(message, icon = 'success') {
@@ -451,12 +454,13 @@
                 return;
             }
 
-            // Verify admin role
+            // Verify admin or super admin role
             try {
                 const userResponse = await apiClient.get('/user');
                 if (userResponse.success && userResponse.data.success) {
                     const user = userResponse.data.data.user;
-                    if (user.role !== 'admin') {
+                    currentUserRole = user.role;
+                    if (user.role !== 'admin' && user.role !== 'super_admin') {
                         window.location.href = 'dashboard.html';
                         return;
                     }
@@ -581,7 +585,7 @@
                     </td>
                     <td>${escapeHtml(user.firstname)} ${escapeHtml(user.lastname || '')}</td>
                     <td>${escapeHtml(user.email)}</td>
-                    <td><span class="badge badge-${user.role}">${escapeHtml(user.role)}</span></td>
+                    <td><span class="badge badge-${user.role === 'super_admin' ? 'super_admin' : user.role}">${user.role === 'super_admin' ? 'Super Admin' : escapeHtml(user.role.charAt(0).toUpperCase() + user.role.slice(1))}</span></td>
                     <td><span class="badge ${user.is_verified ? 'badge-verified' : 'badge-unverified'}">${user.is_verified ? 'Verified' : 'Unverified'}</span></td>
                     <td>${user.membership_level ? escapeHtml(user.membership_level.name) : 'None'}</td>
                     <td>
@@ -589,7 +593,12 @@
                     </td>
                     <td>
                         <button class="btn btn-secondary btn-sm" onclick="window.editUser(${user.id})" type="button">Edit</button>
-                        <button class="btn btn-logout btn-sm" onclick="window.deleteUser(${user.id})" type="button" ${user.id === currentEditingId ? 'disabled' : ''}>Delete</button>
+                        <button class="btn btn-logout btn-sm" onclick="window.deleteUser(${user.id})" type="button" 
+                            ${user.id === currentEditingId ? 'disabled' : ''} 
+                            ${user.role === 'super_admin' ? 'disabled title="Super Admin accounts cannot be deleted"' : ''}
+                            ${user.role === 'admin' && currentUserRole !== 'super_admin' ? 'disabled title="Only Super Admin can delete Admin accounts"' : ''}>
+                            Delete
+                        </button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -802,6 +811,31 @@
             }
         }
 
+        // Update role options based on current user's permissions
+        function updateRoleOptions() {
+            const roleSelect = document.getElementById('role');
+            const adminOption = document.getElementById('adminRoleOption');
+            const superAdminOption = document.getElementById('superAdminRoleOption');
+            
+            if (!roleSelect || !currentUserRole) return;
+            
+            // Only Super Admin can create Admin or Super Admin accounts
+            if (currentUserRole === 'super_admin') {
+                // Super Admin can see all roles
+                if (adminOption) adminOption.style.display = 'block';
+                if (superAdminOption) superAdminOption.style.display = 'block';
+            } else if (currentUserRole === 'admin') {
+                // Regular Admin cannot create Admin or Super Admin accounts
+                if (adminOption) adminOption.style.display = 'none';
+                if (superAdminOption) superAdminOption.style.display = 'none';
+                
+                // If current selection is admin or super_admin, reset to user
+                if (roleSelect.value === 'admin' || roleSelect.value === 'super_admin') {
+                    roleSelect.value = 'user';
+                }
+            }
+        }
+
         // Show/hide membership level field based on role
         function toggleMembershipLevelField() {
             const roleSelect = document.getElementById('role');
@@ -867,6 +901,9 @@
                         document.getElementById('role').value = role;
                         document.getElementById('is_verified').value = user.is_verified ? '1' : '0';
                         
+                        // Hide Admin/Super Admin role options for regular Admin
+                        updateRoleOptions();
+                        
                         // Show/hide membership level field based on role first
                         toggleMembershipLevelField();
                         
@@ -928,6 +965,9 @@
                 
                 // Show/hide membership level field based on default role
                 toggleMembershipLevelField();
+                
+                // Hide Admin/Super Admin role options for regular Admin
+                updateRoleOptions();
             }
             
             console.log('Setting modal display to block');
@@ -1097,6 +1137,22 @@
 
         window.deleteUser = async function(userId) {
             console.log('Delete user clicked:', userId);
+            
+            // Find the user in allUsers array
+            const user = allUsers.find(u => u.id === userId);
+            
+            // Check if trying to delete Super Admin
+            if (user && user.role === 'super_admin') {
+                showToast('Super Admin accounts cannot be deleted', 'error');
+                return;
+            }
+            
+            // Check if Admin trying to delete another Admin
+            if (user && user.role === 'admin' && currentUserRole !== 'super_admin') {
+                showToast('Only Super Admin can delete Admin accounts', 'error');
+                return;
+            }
+            
             const result = await Swal.fire({
                 title: 'Delete User?',
                 text: 'This action cannot be undone',

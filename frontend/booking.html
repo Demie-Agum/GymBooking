@@ -3,46 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Session</title>
+    <title>Gym Sessions - Browse</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/dashboard.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
     <script src="js/booking.js"></script>
     <style>
-        .booking-page {
+        .sessions-page {
             padding: 2rem;
-            max-width: 800px;
-            margin: 0 auto;
         }
         .page-header {
             margin-bottom: 2rem;
         }
-        .booking-card {
+        .page-header h1 {
+            margin-bottom: 0.5rem;
+        }
+        #sessions-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .session-card {
             background: var(--card-bg, #fff);
             border-radius: 12px;
-            padding: 2rem;
+            padding: 0;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
-        .booking-card h2 {
-            margin-top: 0;
+        .session-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        .session-image {
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .session-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .session-card > .session-header,
+        .session-card > .session-details,
+        .session-card > .session-actions {
+            padding: 1.5rem;
+        }
+        .session-card > .session-header {
+            padding-bottom: 1rem;
+        }
+        .session-card > .session-details {
+            padding-top: 0;
+            flex-grow: 1;
+        }
+        .session-card > .session-actions {
+            padding-top: 1rem;
+        }
+        .session-card.full {
+            opacity: 0.7;
+        }
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .session-header h3 {
+            margin: 0;
             color: var(--text-primary, #1f2937);
         }
-        .booking-info p {
-            margin: 1rem 0;
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .full-badge {
+            background: #ef4444;
+            color: white;
+        }
+        .session-details p {
+            margin: 0.5rem 0;
             color: var(--text-secondary, #6b7280);
         }
-        .booking-info strong {
-            color: var(--text-primary, #1f2937);
-        }
-        .warning {
-            background: #fef3c7;
-            color: #92400e;
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1rem 0;
+        .session-actions {
+            margin-top: 1rem;
         }
         .btn-primary {
             background: #667eea;
@@ -51,16 +105,21 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 1rem;
-            margin-top: 1rem;
+            text-decoration: none;
+            display: inline-block;
             transition: background 0.2s;
         }
-        .btn-primary:hover:not(.disabled) {
+        .btn-primary:hover {
             background: #5568d3;
         }
         .btn-primary.disabled {
             background: #9ca3af;
             cursor: not-allowed;
+        }
+        .no-sessions {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary, #6b7280);
         }
         #loading {
             text-align: center;
@@ -86,7 +145,7 @@
             </div>
             <div class="nav-menu">
                 <a href="dashboard.html" class="btn btn-secondary btn-sm">Dashboard</a>
-                <a href="sessions.html" class="btn btn-secondary btn-sm">Browse Sessions</a>
+                <a href="sessions.html" class="btn btn-primary btn-sm">Browse Sessions</a>
                 <a href="my-bookings.html" class="btn btn-secondary btn-sm">My Bookings</a>
                 <a href="profile.html" class="btn btn-secondary btn-sm">Profile</a>
                 <button id="logoutBtn" class="btn btn-logout btn-sm">Logout</button>
@@ -95,27 +154,55 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="booking-page">
+    <div class="sessions-page">
         <div class="page-header">
-            <h1>Book Session</h1>
+            <h1>Available Gym Sessions</h1>
+            <p>Browse and book your favorite gym sessions</p>
         </div>
 
         <div id="error-message"></div>
-        <div id="loading">Loading session details...</div>
-        <div id="booking-details"></div>
+        <div id="loading">Loading sessions...</div>
+        <div id="sessions-list"></div>
     </div>
 
     <script>
+        // Toast notification helper
+        function showToast(message, type = 'success') {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.onmouseenter = Swal.stopTimer;
+                    toast.onmouseleave = Swal.resumeTimer;
+                }
+            });
+
+            Toast.fire({
+                icon: type,
+                title: message
+            });
+        }
+
         // Setup logout
         document.getElementById('logoutBtn').addEventListener('click', async function() {
             try {
+                showToast('Logging out...', 'info');
                 await apiClient.post('/logout');
                 apiClient.removeToken();
-                window.location.href = 'login.html';
+                showToast('Logged out successfully', 'success');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
             } catch (error) {
                 console.error('Logout error:', error);
                 apiClient.removeToken();
-                window.location.href = 'login.html';
+                showToast('Logged out successfully', 'success');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
             }
         });
     </script>

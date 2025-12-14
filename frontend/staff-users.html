@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users - Staff</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <style>
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        thead {
+            background: #3b82f6;
+            color: white;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 14px;
+            margin: 0 4px;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+        .btn-sm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        button.btn {
+            cursor: pointer;
+            pointer-events: auto;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-admin { background: #ef4444; color: white; }
+        .badge-staff { background: #f59e0b; color: white; }
+        .badge-user { background: #10b981; color: white; }
+        .badge-verified { background: #10b981; color: white; }
+        .badge-unverified { background: #6b7280; color: white; }
+        .badge-subscription-active { background: #10b981; color: white; }
+        .badge-subscription-expiring { background: #f59e0b; color: white; }
+        .badge-subscription-expired { background: #ef4444; color: white; }
+        .badge-subscription-none { background: #6b7280; color: white; }
+        .profile-picture {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e5e7eb;
+        }
+        .profile-picture-placeholder {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            font-weight: 600;
+            font-size: 14px;
+            border: 2px solid #d1d5db;
+        }
+        .default-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e5e7eb;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            overflow: auto;
+        }
+        .modal.show {
+            display: block !important;
+        }
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+                padding: 15px;
+            }
+            
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            table {
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 8px 6px;
+            }
+            
+            .btn-sm {
+                padding: 4px 8px;
+                font-size: 12px;
+                margin: 2px;
+            }
+            
+            .nav-menu {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .nav-menu .btn {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+            
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .form-group input,
+            .form-group select {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .modal-content {
+                width: 98%;
+                margin: 5% auto;
+                padding: 12px;
+            }
+            
+            table {
+                font-size: 12px;
+            }
+            
+            th, td {
+                padding: 6px 4px;
+            }
+            
+            .profile-picture,
+            .profile-picture-placeholder,
+            .default-avatar {
+                width: 30px;
+                height: 30px;
+            }
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+                padding: 15px;
+            }
+            
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            table {
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 8px 6px;
+            }
+            
+            .btn-sm {
+                padding: 4px 8px;
+                font-size: 12px;
+                margin: 2px;
+            }
+            
+            .nav-menu {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .nav-menu .btn {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+            
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .form-group input,
+            .form-group select {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .modal-content {
+                width: 98%;
+                margin: 5% auto;
+                padding: 12px;
+            }
+            
+            table {
+                font-size: 12px;
+            }
+            
+            th, td {
+                padding: 6px 4px;
+            }
+            
+            .profile-picture,
+            .profile-picture-placeholder,
+            .default-avatar {
+                width: 30px;
+                height: 30px;
+            }
+        }
+        
+        .search-box {
+            margin-bottom: 20px;
+        }
+        .search-box input {
+            width: 100%;
+            max-width: 400px;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="dashboard-page" data-theme="light">
+    
+    <!-- Navbar -->
+    <nav class="dashboard-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>Staff - Manage Users</h2>
+            </div>
+            <div class="nav-menu">
+                <a href="staff-dashboard.html" class="btn btn-secondary btn-sm">Dashboard</a>
+                <a href="staff-users.html" class="btn btn-primary btn-sm">Manage Users</a>
+                <a href="staff-sessions.html" class="btn btn-secondary btn-sm">Manage Sessions</a>
+                <a href="staff-bookings.html" class="btn btn-secondary btn-sm">Manage Bookings</a>
+                <button id="logoutBtn" class="btn btn-logout btn-sm" type="button">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="dashboard-container">
+        
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <h1>User Management</h1>
+                <button id="addUserBtn" class="btn btn-primary">+ Add New User</button>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search users by name or email...">
+        </div>
+
+        <!-- Users Table -->
+        <div class="table-container">
+            <div id="loading" style="text-align: center; padding: 20px;">Loading users...</div>
+            <table id="usersTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Profile</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Verified</th>
+                        <th>Membership</th>
+                        <th>Subscription Expiry</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                </tbody>
+            </table>
+            <div id="noUsers" style="display: none; text-align: center; padding: 20px; color: #6b7280;">
+                No users found.
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Add/Edit User Modal -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Add User</h2>
+            <form id="userForm">
+                <input type="hidden" id="userId">
+                <div class="form-group">
+                    <label>First Name *</label>
+                    <input type="text" id="firstname" required>
+                </div>
+                <div class="form-group">
+                    <label>Last Name *</label>
+                    <input type="text" id="lastname" required>
+                </div>
+                <div class="form-group">
+                    <label>Middle Name</label>
+                    <input type="text" id="middlename">
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label id="passwordLabel">Password *</label>
+                    <input type="password" id="password" required>
+                    <small id="passwordHint" style="color: #6b7280; font-size: 12px;"></small>
+                </div>
+                <input type="hidden" id="role" value="user">
+                <div class="form-group" id="membershipLevelGroup" style="display: block;">
+                    <label>Membership Level</label>
+                    <select id="membership_level_id">
+                        <option value="">None</option>
+                        <!-- Dynamically loaded from API -->
+                    </select>
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">Select membership level for this user (only for User role)</small>
+                </div>
+                <div class="form-group" id="subscriptionExpiryGroup" style="display: block;">
+                    <label>Subscription Expiry Date</label>
+                    <input type="datetime-local" id="subscription_expires_at">
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">Leave empty to use default duration from membership level, or set custom expiry date</small>
+                </div>
+                <div class="form-group">
+                    <label>Email Verified</label>
+                    <select id="is_verified">
+                        <option value="1">Yes</option>
+                        <option value="0">No</option>
+                    </select>
+                </div>
+                <div class="form-group" id="profilePictureGroup" style="display: none;">
+                    <label>Profile Picture</label>
+                    <input type="file" id="profilePictureInput" accept="image/*">
+                    <div id="profilePicturePreview" style="margin-top: 10px;">
+                        <img id="profilePictureImg" src="" alt="Profile Picture" style="max-width: 150px; max-height: 150px; border-radius: 8px; display: none;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;" id="saveUserBtn">Save</button>
+                    <button type="button" class="btn btn-secondary" id="cancelBtn" style="flex: 1; cursor: pointer;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let allUsers = [];
+        let currentEditingId = null;
+        let currentProfilePicture = null;
+        let membershipLevelsData = []; // Store membership levels with default_duration_days
+
+        // Toast notification function
+        function showToast(message, icon = 'success') {
+            console.log('showToast called:', message, icon);
+            try {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: icon,
+                    title: message,
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            } catch (error) {
+                console.error('Error showing toast:', error);
+                // Fallback to alert if SweetAlert2 is not available
+                alert(message);
+            }
+        }
+
+        // Check authentication and admin role
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (!apiClient.isAuthenticated()) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Verify staff role
+            try {
+                const userResponse = await apiClient.get('/user');
+                if (userResponse.success && userResponse.data.success) {
+                    const user = userResponse.data.data.user;
+                    if (user.role !== 'staff' && user.role !== 'admin') {
+                        window.location.href = 'dashboard.html';
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking staff access:', error);
+                window.location.href = 'login.html';
+                return;
+            }
+
+            await loadUsers();
+            setupEventListeners();
+            
+            console.log('Staff users page initialized');
+            console.log('Edit function available:', typeof window.editUser);
+        });
+
+        async function loadUsers() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('usersTable').style.display = 'none';
+                document.getElementById('noUsers').style.display = 'none';
+
+                const response = await apiClient.get('/staff/users');
+                
+                if (response.success && response.data.success) {
+                    allUsers = response.data.data;
+                    displayUsers(allUsers);
+                } else {
+                    const errorMsg = response.data?.message || 'Unknown error';
+                    showToast('Failed to load users: ' + errorMsg, 'error');
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showToast('Failed to load users. Please refresh the page.', 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function getSubscriptionExpiryHtml(user) {
+            if (!user.membership_level) {
+                return '<span class="badge badge-subscription-none">No Membership</span>';
+            }
+            
+            if (!user.subscription_expires_at) {
+                return '<span class="badge badge-subscription-active">No Expiry</span>';
+            }
+            
+            const expiryDate = new Date(user.subscription_expires_at);
+            const now = new Date();
+            const daysUntil = user.days_until_expiry ? Math.floor(user.days_until_expiry) : null;
+            
+            let statusClass = 'badge-subscription-active';
+            let statusText = 'Active';
+            
+            if (daysUntil === 0 || expiryDate < now) {
+                statusClass = 'badge-subscription-expired';
+                statusText = 'Expired';
+            } else if (user.subscription_expiring_soon) {
+                statusClass = 'badge-subscription-expiring';
+                statusText = `Expiring Soon (${daysUntil} days)`;
+            } else {
+                statusText = `${daysUntil} days left`;
+            }
+            
+            const formattedDate = expiryDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            return `
+                <div>
+                    <span class="badge ${statusClass}">${statusText}</span>
+                    <br>
+                    <small style="color: #6b7280; font-size: 11px;">${formattedDate}</small>
+                </div>
+            `;
+        }
+
+        function displayUsers(users) {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+
+            if (users.length === 0) {
+                document.getElementById('noUsers').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('usersTable').style.display = 'table';
+
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                
+                // Profile picture HTML with default avatar fallback
+                const defaultAvatar = 'images/default-avatar.png';
+                let profilePictureHtml = '';
+                
+                if (user.profile_picture) {
+                    profilePictureHtml = `
+                        <img src="${escapeHtml(user.profile_picture)}" 
+                             alt="Profile" 
+                             class="profile-picture" 
+                             onerror="this.onerror=null; this.src='${defaultAvatar}';">
+                    `;
+                } else {
+                    profilePictureHtml = `
+                        <img src="${defaultAvatar}" 
+                             alt="Profile" 
+                             class="default-avatar">
+                    `;
+                }
+                
+                row.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>
+                        <div style="position: relative; display: inline-block;">
+                            ${profilePictureHtml}
+                        </div>
+                    </td>
+                    <td>${escapeHtml(user.firstname)} ${escapeHtml(user.lastname || '')}</td>
+                    <td>${escapeHtml(user.email)}</td>
+                    <td><span class="badge ${user.is_verified ? 'badge-verified' : 'badge-unverified'}">${user.is_verified ? 'Verified' : 'Unverified'}</span></td>
+                    <td>${user.membership_level ? escapeHtml(user.membership_level.name) : 'None'}</td>
+                    <td>
+                        ${getSubscriptionExpiryHtml(user)}
+                    </td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" onclick="window.editUser(${user.id})" type="button">Edit</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function setupEventListeners() {
+            const addUserBtn = document.getElementById('addUserBtn');
+            if (addUserBtn) {
+                addUserBtn.addEventListener('click', async () => {
+                    console.log('Add user button clicked');
+                    await openModal();
+                });
+            } else {
+                console.error('Add user button not found');
+            }
+
+            const userForm = document.getElementById('userForm');
+            if (userForm) {
+                userForm.addEventListener('submit', handleSubmit);
+            }
+
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', handleSearch);
+            }
+
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log('Logout button clicked');
+                    handleLogout();
+                });
+            } else {
+                console.error('Logout button not found!');
+            }
+
+            // Cancel button handler
+            const cancelBtn = document.getElementById('cancelBtn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    console.log('Cancel button clicked');
+                    closeModal();
+                });
+            }
+
+            // Role is always 'user' for staff, so membership fields are always visible
+
+            // Membership level change handler to auto-calculate expiry
+            const membershipLevelSelect = document.getElementById('membership_level_id');
+            if (membershipLevelSelect) {
+                membershipLevelSelect.addEventListener('change', function() {
+                    const expiryInput = document.getElementById('subscription_expires_at');
+                    if (!expiryInput) return;
+                    
+                    // Always auto-calculate when membership level changes
+                    const selectedOption = this.options[this.selectedIndex];
+                    const durationDays = selectedOption.dataset.durationDays;
+                    
+                    if (durationDays && durationDays !== 'null' && durationDays !== '') {
+                        // Calculate expiry date from today + duration days
+                        const expiryDate = new Date();
+                        expiryDate.setDate(expiryDate.getDate() + parseInt(durationDays));
+                        
+                        // Format for datetime-local input (YYYY-MM-DDTHH:mm)
+                        const year = expiryDate.getFullYear();
+                        const month = String(expiryDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(expiryDate.getDate()).padStart(2, '0');
+                        const hours = String(expiryDate.getHours()).padStart(2, '0');
+                        const minutes = String(expiryDate.getMinutes()).padStart(2, '0');
+                        
+                        const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+                        expiryInput.value = formattedDate;
+                        
+                        console.log(`Auto-calculated expiry date: ${formattedDate} (${durationDays} days from today)`);
+                    } else {
+                        // Free tier or no duration - clear expiry field
+                        expiryInput.value = '';
+                    }
+                });
+            }
+            
+            // Profile picture upload handler
+            const profilePictureInput = document.getElementById('profilePictureInput');
+            if (profilePictureInput) {
+                profilePictureInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        if (!file.type.startsWith('image/')) {
+                            showToast('Please select an image file', 'error');
+                            return;
+                        }
+                        if (file.size > 2 * 1024 * 1024) {
+                            showToast('Image size should be less than 2MB', 'error');
+                            return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            currentProfilePicture = event.target.result;
+                            const img = document.getElementById('profilePictureImg');
+                            img.src = currentProfilePicture;
+                            img.style.display = 'block';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        }
+
+        function handleSearch(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = allUsers.filter(user => 
+                user.firstname.toLowerCase().includes(searchTerm) ||
+                user.lastname.toLowerCase().includes(searchTerm) ||
+                user.email.toLowerCase().includes(searchTerm)
+            );
+            displayUsers(filtered);
+        }
+
+        // Load membership levels from API
+        async function loadMembershipLevels() {
+            try {
+                console.log('Loading membership levels...');
+                const response = await apiClient.get('/membership-levels', false);
+                console.log('Membership levels response:', response);
+                
+                let levels = [];
+                // Handle different response structures
+                // API returns: {success: true, data: [...]}
+                // apiClient wraps it: {success: true, status: 200, data: {success: true, data: [...]}}
+                console.log('Full response:', response);
+                console.log('response.data:', response.data);
+                
+                if (response.success && response.data) {
+                    // Check if response.data is the array directly
+                    if (Array.isArray(response.data)) {
+                        levels = response.data;
+                        console.log('Levels found in response.data (direct array)');
+                    } 
+                    // Check if response.data.data exists (nested structure from apiClient)
+                    else if (response.data.data !== undefined) {
+                        if (Array.isArray(response.data.data)) {
+                            levels = response.data.data;
+                            console.log('Levels found in response.data.data (nested array)');
+                        } else if (response.data.data && response.data.data.data && Array.isArray(response.data.data.data)) {
+                            levels = response.data.data.data;
+                            console.log('Levels found in response.data.data.data (deeply nested)');
+                        }
+                    }
+                    // Check if response.data.success and response.data.data
+                    else if (response.data.success && response.data.data && Array.isArray(response.data.data)) {
+                        levels = response.data.data;
+                        console.log('Levels found in response.data.data (success wrapper)');
+                    }
+                }
+                
+                console.log('Parsed levels:', levels);
+                console.log('Number of levels:', levels.length);
+                
+                const select = document.getElementById('membership_level_id');
+                if (!select) {
+                    console.error('Membership level select not found');
+                    return;
+                }
+                
+                // Keep the "None" option and add levels
+                select.innerHTML = '<option value="">None</option>';
+                
+                if (levels && levels.length > 0) {
+                    // Store membership levels data for auto-calculation
+                    membershipLevelsData = levels;
+                    
+                    levels.forEach(level => {
+                        const option = document.createElement('option');
+                        option.value = level.id;
+                        option.dataset.durationDays = level.default_duration_days || '';
+                        const limitText = level.weekly_limit === null ? 'Unlimited' : `${level.weekly_limit} per week`;
+                        option.textContent = `${level.name} (${limitText})`;
+                        select.appendChild(option);
+                    });
+                    console.log('Membership levels loaded successfully:', levels.length, 'levels');
+                } else {
+                    console.error('⚠️ DATABASE IS EMPTY - No membership levels found!');
+                    console.error('To fix this, run in your backend terminal:');
+                    console.error('  cd backend');
+                    console.error('  php artisan db:seed --class=MembershipLevelSeeder');
+                    // Show a helpful message
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = '⚠️ Database Empty - Run Seeder First';
+                    option.disabled = true;
+                    option.style.color = '#ef4444';
+                    select.appendChild(option);
+                    
+                    // Show toast notification
+                    setTimeout(() => {
+                        showToast('Database has no membership levels. Please run the seeder: php artisan db:seed --class=MembershipLevelSeeder', 'error');
+                    }, 500);
+                }
+            } catch (error) {
+                console.error('Error loading membership levels:', error);
+                showToast('Failed to load membership levels', 'error');
+            }
+        }
+
+        // Membership level fields are always visible for staff (role is always 'user')
+        function toggleMembershipLevelField() {
+            // Always show membership fields for staff
+            const membershipLevelGroup = document.getElementById('membershipLevelGroup');
+            const subscriptionExpiryGroup = document.getElementById('subscriptionExpiryGroup');
+            if (membershipLevelGroup) membershipLevelGroup.style.display = 'block';
+            if (subscriptionExpiryGroup) subscriptionExpiryGroup.style.display = 'block';
+        }
+
+        async function openModal(userId = null) {
+            console.log('openModal called with userId:', userId);
+            currentEditingId = userId;
+            const modal = document.getElementById('userModal');
+            
+            if (!modal) {
+                console.error('Modal element not found!');
+                showToast('Modal element not found', 'error');
+                return;
+            }
+            
+            // Load membership levels first
+            await loadMembershipLevels();
+            console.log('Membership levels loaded, continuing with modal setup...');
+            
+            const form = document.getElementById('userForm');
+            const profilePictureGroup = document.getElementById('profilePictureGroup');
+            const profilePictureImg = document.getElementById('profilePictureImg');
+            const profilePictureInput = document.getElementById('profilePictureInput');
+            
+            if (userId) {
+                // Fetch user data from API
+                try {
+                    console.log('Fetching user data for ID:', userId);
+                    const response = await apiClient.get(`/staff/users/${userId}`);
+                    console.log('User data response:', response);
+                    
+                    if (response.success && response.data.success) {
+                        const user = response.data.data;
+                        console.log('User data loaded:', user);
+                        
+                        document.getElementById('modalTitle').textContent = 'Edit User';
+                        document.getElementById('userId').value = user.id;
+                        document.getElementById('firstname').value = user.firstname || '';
+                        document.getElementById('lastname').value = user.lastname || '';
+                        document.getElementById('middlename').value = user.middlename || '';
+                        document.getElementById('email').value = user.email || '';
+                        document.getElementById('password').required = false;
+                        document.getElementById('password').value = '';
+                        document.getElementById('password').placeholder = 'Leave blank to keep current password';
+                        document.getElementById('passwordLabel').textContent = 'Password (leave blank to keep current)';
+                        document.getElementById('passwordHint').textContent = 'Only fill this if you want to change the password';
+                        // Role is always 'user' for staff
+                        document.getElementById('role').value = 'user';
+                        document.getElementById('is_verified').value = user.is_verified ? '1' : '0';
+                        
+                        // Show/hide membership level field based on role first
+                        toggleMembershipLevelField();
+                        
+                        // Set membership level (wait for levels to load)
+                        await loadMembershipLevels(); // Make sure levels are loaded first
+                        setTimeout(() => {
+                            if (user.membership_level && user.membership_level.id) {
+                                document.getElementById('membership_level_id').value = user.membership_level.id;
+                            } else {
+                                document.getElementById('membership_level_id').value = '';
+                            }
+                            
+                            // Set subscription expiry date
+                            if (user.subscription_expires_at) {
+                                const expiryDate = new Date(user.subscription_expires_at);
+                                // Format for datetime-local input (YYYY-MM-DDTHH:mm)
+                                const formattedDate = expiryDate.toISOString().slice(0, 16);
+                                document.getElementById('subscription_expires_at').value = formattedDate;
+                            } else {
+                                document.getElementById('subscription_expires_at').value = '';
+                            }
+                        }, 200);
+                        
+                        // Show profile picture section for editing
+                        if (profilePictureGroup) profilePictureGroup.style.display = 'block';
+                        if (user.profile_picture && profilePictureImg) {
+                            profilePictureImg.src = user.profile_picture;
+                            profilePictureImg.style.display = 'block';
+                            currentProfilePicture = user.profile_picture;
+                        } else {
+                            if (profilePictureImg) profilePictureImg.style.display = 'none';
+                            currentProfilePicture = null;
+                        }
+                        if (profilePictureInput) profilePictureInput.value = '';
+                    } else {
+                        console.error('Failed to load user data:', response);
+                        showToast('Failed to load user data', 'error');
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error fetching user:', error);
+                    showToast('Failed to load user data', 'error');
+                    return;
+                }
+            } else {
+                console.log('Opening modal for new user');
+                document.getElementById('modalTitle').textContent = 'Add User';
+                if (form) form.reset();
+                document.getElementById('password').required = true;
+                document.getElementById('password').placeholder = '';
+                document.getElementById('passwordLabel').textContent = 'Password *';
+                document.getElementById('passwordHint').textContent = '';
+                document.getElementById('membership_level_id').value = '';
+                document.getElementById('subscription_expires_at').value = '';
+                if (profilePictureGroup) profilePictureGroup.style.display = 'none';
+                if (profilePictureImg) profilePictureImg.style.display = 'none';
+                currentProfilePicture = null;
+                if (profilePictureInput) profilePictureInput.value = '';
+                
+                // Show/hide membership level field based on default role
+                toggleMembershipLevelField();
+            }
+            
+            console.log('Setting modal display to block');
+            modal.style.display = 'block';
+            modal.classList.add('show');
+            console.log('Modal display set. Current style:', modal.style.display);
+            console.log('Modal classes:', modal.className);
+            
+            // Force a reflow to ensure the modal displays
+            void modal.offsetHeight;
+        }
+
+        function closeModal() {
+            console.log('closeModal called');
+            const modal = document.getElementById('userModal');
+            if (modal) {
+                document.getElementById('subscription_expires_at').value = '';
+            }
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+            }
+            const form = document.getElementById('userForm');
+            if (form) form.reset();
+            const profilePictureGroup = document.getElementById('profilePictureGroup');
+            if (profilePictureGroup) profilePictureGroup.style.display = 'none';
+            const profilePictureImg = document.getElementById('profilePictureImg');
+            if (profilePictureImg) profilePictureImg.style.display = 'none';
+            const profilePictureInput = document.getElementById('profilePictureInput');
+            if (profilePictureInput) profilePictureInput.value = '';
+            currentEditingId = null;
+            currentProfilePicture = null;
+        }
+
+        // Make closeModal globally accessible
+        window.closeModal = closeModal;
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            const saveBtn = document.getElementById('saveUserBtn');
+            const originalText = saveBtn.textContent;
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+            
+            const userId = document.getElementById('userId').value;
+            const formData = {
+                firstname: document.getElementById('firstname').value.trim(),
+                lastname: document.getElementById('lastname').value.trim(),
+                middlename: document.getElementById('middlename').value.trim() || null,
+                email: document.getElementById('email').value.trim(),
+                // Role is always 'user' for staff
+                is_verified: document.getElementById('is_verified').value === '1',
+            };
+
+            // Add membership level (always for staff since role is always 'user')
+            const membershipLevelId = document.getElementById('membership_level_id').value;
+            if (membershipLevelId) {
+                formData.membership_level_id = parseInt(membershipLevelId);
+            } else {
+                formData.membership_level_id = null;
+            }
+
+            // Add subscription expiry date if provided
+            const subscriptionExpiresAt = document.getElementById('subscription_expires_at').value;
+            if (subscriptionExpiresAt) {
+                formData.subscription_expires_at = subscriptionExpiresAt;
+            } else {
+                // If no expiry date provided, backend will calculate from membership level default
+                formData.subscription_expires_at = null;
+            }
+
+            const password = document.getElementById('password').value;
+            if (password && password.trim() !== '') {
+                formData.password = password;
+            }
+
+            // Add profile picture if uploaded
+            if (currentProfilePicture && currentProfilePicture.startsWith('data:image')) {
+                formData.profile_picture = currentProfilePicture;
+            }
+
+            try {
+                console.log('Saving user data:', formData);
+                let response;
+                if (userId) {
+                    console.log('Updating user:', userId);
+                    response = await apiClient.put(`/staff/users/${userId}`, formData);
+                } else {
+                    if (!password || password.trim() === '') {
+                        showToast('Password is required for new users', 'error');
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = originalText;
+                        return;
+                    }
+                    console.log('Creating new user');
+                    // Create user via staff endpoint
+                    response = await apiClient.post('/staff/users', {
+                        ...formData,
+                        password: password
+                    });
+                }
+
+                console.log('Save response:', response);
+
+                if (response.success && response.data && response.data.success) {
+                    showToast(userId ? 'User updated successfully!' : 'User created successfully!', 'success');
+                    closeModal();
+                    await loadUsers();
+                } else {
+                    // Handle validation errors
+                    console.error('Save failed:', response);
+                    const errorMsg = response.data?.message || 'Unknown error';
+                    let errorDetails = '';
+                    if (response.data?.errors) {
+                        const errors = response.data.errors;
+                        errorDetails = Object.keys(errors).map(key => {
+                            return `${key}: ${errors[key][0]}`;
+                        }).join('<br>');
+                    }
+                    
+                    // Show detailed error in toast
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Save Failed',
+                        html: errorDetails || errorMsg,
+                        confirmButtonText: 'OK'
+                    });
+                }
+            } catch (error) {
+                console.error('Error saving user:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    response: error.response,
+                    stack: error.stack
+                });
+                
+                let errorMessage = 'Failed to save user. Please try again.';
+                if (error.response?.data?.message) {
+                    errorMessage = error.response.data.message;
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Save Failed',
+                    text: errorMessage,
+                    confirmButtonText: 'OK'
+                });
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = originalText;
+            }
+        }
+
+        // Make functions globally accessible
+        window.editUser = async function(userId) {
+            console.log('Edit user clicked:', userId);
+            try {
+                await openModal(userId);
+            } catch (error) {
+                console.error('Error opening edit modal:', error);
+                showToast('Failed to open edit form', 'error');
+            }
+        };
+
+        // Staff cannot delete users (admin only)
+
+
+        async function handleLogout() {
+            console.log('handleLogout called');
+            
+            try {
+                const result = await Swal.fire({
+                    title: 'Logout?',
+                    text: 'Are you sure you want to logout?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, logout',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#ef4444'
+                });
+
+                console.log('Confirmation result:', result);
+
+                if (!result.isConfirmed) {
+                    console.log('Logout cancelled');
+                    return;
+                }
+
+                console.log('Logging out...');
+                showToast('Logging out...', 'info');
+                
+                const response = await apiClient.post('/logout');
+                console.log('Logout response:', response);
+                
+                if (response.success) {
+                    showToast('Logged out successfully', 'success');
+                    apiClient.removeToken();
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
+                } else {
+                    const errorMsg = response.data?.message || 'Failed to logout';
+                    console.error('Logout failed:', errorMsg);
+                    showToast(errorMsg, 'error');
+                    // Still clear token and redirect even if API call fails
+                    apiClient.removeToken();
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    response: error.response,
+                    stack: error.stack
+                });
+                
+                let errorMessage = 'Failed to logout. Please try again.';
+                if (error.response?.data?.message) {
+                    errorMessage = error.response.data.message;
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                
+                showToast(errorMessage, 'error');
+                
+                // Still clear token and redirect even if API call fails
+                apiClient.removeToken();
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('userModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
+

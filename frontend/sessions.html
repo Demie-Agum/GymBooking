@@ -166,16 +166,43 @@
     </div>
 
     <script>
+        // Toast notification helper
+        function showToast(message, type = 'success') {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.onmouseenter = Swal.stopTimer;
+                    toast.onmouseleave = Swal.resumeTimer;
+                }
+            });
+
+            Toast.fire({
+                icon: type,
+                title: message
+            });
+        }
+
         // Setup logout
         document.getElementById('logoutBtn').addEventListener('click', async function() {
             try {
+                showToast('Logging out...', 'info');
                 await apiClient.post('/logout');
                 apiClient.removeToken();
-                window.location.href = 'login.html';
+                showToast('Logged out successfully', 'success');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
             } catch (error) {
                 console.error('Logout error:', error);
                 apiClient.removeToken();
-                window.location.href = 'login.html';
+                showToast('Logged out successfully', 'success');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
             }
         });
     </script>

@@ -146,29 +146,93 @@
             display: none;
         }
 
+        /* Hamburger Menu */
+        .hamburger {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 1001;
+        }
+        
+        .hamburger span {
+            display: block;
+            width: 25px;
+            height: 3px;
+            background: var(--text);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(8px, 8px);
+        }
+        
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .nav-wrapper {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
                 padding: 0 1rem;
             }
             
             .nav-brand {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
                 font-size: 1.2rem;
             }
             
+            .hamburger {
+                display: flex;
+            }
+            
             .nav-links {
-                flex-wrap: wrap;
-                gap: 1rem;
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--card-bg);
+                border-top: 1px solid var(--border);
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                flex-direction: column;
+                gap: 0;
+                width: 100%;
+                padding: 1rem 0;
+                z-index: 1000;
+                list-style: none;
+                margin: 0;
+            }
+            
+            .nav-links.active {
+                display: flex;
+            }
+            
+            .nav-links li {
                 width: 100%;
             }
             
             .nav-links a,
             .nav-links .btn {
-                font-size: 0.9rem;
-                padding: 0.5rem 1rem;
+                width: 100%;
+                text-align: left;
+                padding: 12px 1rem;
+                border-radius: 0;
+                font-size: 14px;
+                display: block;
             }
             
             .dashboard-container {
@@ -214,19 +278,6 @@
                 font-size: 1rem;
             }
             
-            .nav-links {
-                flex-direction: column;
-                width: 100%;
-                gap: 0.5rem;
-            }
-            
-            .nav-links a,
-            .nav-links .btn {
-                width: 100%;
-                text-align: center;
-                padding: 0.6rem 1rem;
-            }
-            
             .dashboard-container {
                 padding: 0.5rem;
             }
@@ -266,8 +317,15 @@
     <!-- Navbar -->
     <nav class="home-nav">
         <div class="nav-wrapper">
-            <div class="nav-brand">🏋️ Gym Booking</div>
-            <ul class="nav-links">
+            <div class="nav-brand">
+                <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <span>🏋️ Gym Booking</span>
+            </div>
+            <ul class="nav-links" id="navMenu">
                 <li><a href="dashboard.html">Dashboard</a></li>
                 <li><a href="sessions.html">Browse Sessions</a></li>
                 <li><a href="my-bookings.html">My Bookings</a></li>
@@ -389,7 +447,41 @@
         }
 
         // Load user info and dashboard data
+        // Setup hamburger menu
+        function setupHamburgerMenu() {
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const navMenu = document.getElementById('navMenu');
+            
+            if (hamburgerBtn && navMenu) {
+                hamburgerBtn.addEventListener('click', function() {
+                    hamburgerBtn.classList.toggle('active');
+                    navMenu.classList.toggle('active');
+                });
+                
+                // Close menu when clicking on a link
+                const navLinks = navMenu.querySelectorAll('a, button');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        hamburgerBtn.classList.remove('active');
+                        navMenu.classList.remove('active');
+                    });
+                });
+                
+                // Close menu when clicking outside
+                document.addEventListener('click', function(event) {
+                    const isClickInsideNav = navMenu.contains(event.target) || hamburgerBtn.contains(event.target);
+                    if (!isClickInsideNav && navMenu.classList.contains('active')) {
+                        hamburgerBtn.classList.remove('active');
+                        navMenu.classList.remove('active');
+                    }
+                });
+            }
+        }
+        
         document.addEventListener('DOMContentLoaded', async function() {
+            // Setup hamburger menu
+            setupHamburgerMenu();
+            
             // Check user role and redirect accordingly
             try {
                 const userResponse = await apiClient.get('/user');

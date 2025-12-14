@@ -464,6 +464,7 @@
             
             console.log('Staff users page initialized');
             console.log('Edit function available:', typeof window.editUser);
+            console.log('Delete function available:', typeof window.deleteUser);
         });
 
         async function loadUsers() {
@@ -579,6 +580,7 @@
                     </td>
                     <td>
                         <button class="btn btn-secondary btn-sm" onclick="window.editUser(${user.id})" type="button">Edit</button>
+                        <button class="btn btn-logout btn-sm" onclick="window.deleteUser(${user.id})" type="button" ${user.id === currentEditingId ? 'disabled' : ''}>Delete</button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -1068,7 +1070,36 @@
             }
         };
 
-        // Staff cannot delete users (admin only)
+        window.deleteUser = async function(userId) {
+            console.log('Delete user clicked:', userId);
+            const result = await Swal.fire({
+                title: 'Delete User?',
+                text: 'This action cannot be undone',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete it',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#ef4444'
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            try {
+                const response = await apiClient.delete(`/staff/users/${userId}`);
+                if (response.success && response.data.success) {
+                    showToast('User deleted successfully!', 'success');
+                    await loadUsers();
+                } else {
+                    const errorMsg = response.data?.message || 'Unknown error';
+                    showToast('Error: ' + errorMsg, 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                showToast('Failed to delete user. Please try again.', 'error');
+            }
+        };
 
 
         async function handleLogout() {

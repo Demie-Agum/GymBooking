@@ -922,18 +922,12 @@
             
             if (!roleSelect || !currentUserRole) return;
             
-            // Only Super Admin can create Admin accounts
+            // Super Admin can see all roles (except super_admin - only one exists)
             if (currentUserRole === 'super_admin') {
-                // Super Admin can see all roles (except super_admin - only one exists)
                 if (adminOption) adminOption.style.display = 'block';
             } else if (currentUserRole === 'admin') {
-                // Regular Admin cannot create Admin accounts
-                if (adminOption) adminOption.style.display = 'none';
-                
-                // If current selection is admin, reset to user
-                if (roleSelect.value === 'admin') {
-                    roleSelect.value = 'user';
-                }
+                // Regular Admin CAN now create Admin accounts (per teacher's requirement)
+                if (adminOption) adminOption.style.display = 'block';
             }
         }
 

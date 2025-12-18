@@ -187,6 +187,45 @@
             color: #667eea;
         }
         
+        /* Ensure buttons and links are always clickable */
+        .verify-actions button,
+        .back-to-login a,
+        .resend-btn {
+            position: relative;
+            z-index: 9999 !important;
+            pointer-events: auto !important;
+            cursor: pointer !important;
+        }
+        
+        .back-to-login {
+            position: relative;
+            z-index: 9999 !important;
+            pointer-events: auto !important;
+        }
+        
+        .back-to-login a {
+            display: inline-block;
+            position: relative;
+            z-index: 10000 !important;
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            text-decoration: none !important;
+        }
+        
+        .verify-card {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Override any SweetAlert overlays that might block */
+        .swal2-container {
+            z-index: 1000 !important;
+        }
+        
+        .swal2-popup {
+            z-index: 1001 !important;
+        }
+        
         /* Dark theme adjustments */
         [data-theme="dark"] .verify-container {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -312,7 +351,7 @@
 
             <!-- Back to Login -->
             <div class="back-to-login">
-                <a href="login.html">← Back to Login</a>
+                <a href="login.html" onclick="window.location.href='login.html'; return false;" style="position: relative; z-index: 10000 !important; pointer-events: auto !important; cursor: pointer !important;">← Back to Login</a>
             </div>
 
         </div>

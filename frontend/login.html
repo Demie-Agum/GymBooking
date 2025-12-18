@@ -20,22 +20,6 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     
     <style>
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        #resumeBanner button:hover {
-            background: rgba(255, 255, 255, 0.9) !important;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
     </style>
 </head>
 <body data-theme="light">
@@ -61,24 +45,6 @@
 
     <!-- Auth Container -->
     <div class="auth-container">
-        <!-- Resume Verification Banner (Hidden by default) -->
-        <div id="resumeBanner" style="display: none; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; padding: 16px 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); animation: slideDown 0.4s ease;">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
-                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
-                <div style="flex: 1;">
-                    <h3 style="margin: 0; font-size: 16px; font-weight: 700;">Email Verification Pending</h3>
-                    <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.95;">You have an unverified account: <strong id="pendingEmailDisplay"></strong></p>
-                </div>
-            </div>
-            <button onclick="resumeVerification()" style="width: 100%; padding: 10px 16px; background: white; color: #f59e0b; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease; margin-top: 8px;">
-                📧 Continue Verification
-            </button>
-        </div>
-        
         <div class="auth-card">
             
             <!-- Header -->

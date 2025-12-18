@@ -526,9 +526,6 @@ function checkAuth() {
         // window.location.href = 'dashboard.html';
     }
     
-    // Check for pending verification
-    checkPendingVerificationBanner();
-    
     // Check if just verified (show success message)
     checkJustVerified();
 }
@@ -545,33 +542,6 @@ function checkJustVerified() {
     }
 } // ← ADD THIS CLOSING BRACE
 
-// ========================================
-// Check and Show Pending Verification Banner
-// ========================================
-
-function checkPendingVerificationBanner() {
-    const pendingEmail = localStorage.getItem(PENDING_EMAIL_KEY);
-    const resumeBanner = document.getElementById('resumeBanner');
-    const pendingEmailDisplay = document.getElementById('pendingEmailDisplay');
-    
-    if (pendingEmail && resumeBanner && pendingEmailDisplay) {
-        pendingEmailDisplay.textContent = pendingEmail;
-        resumeBanner.style.display = 'block';
-    }
-}
-
-// ========================================
-// Resume Verification Function
-// ========================================
-
-function resumeVerification() {
-    const pendingEmail = localStorage.getItem(PENDING_EMAIL_KEY);
-    
-    if (pendingEmail) {
-        sessionStorage.setItem('returning_to_verify', 'true');
-        window.location.href = 'verify.html';
-    }
-}
 
 // ========================================
 // Initialize

@@ -58,26 +58,61 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check if coming from link verification (optional - remove if you don't want link verification)
     // checkTokenVerification();
     
-    // Ensure Back to Login link is always clickable
-    const backToLoginLink = document.querySelector('.back-to-login a');
+    // Ensure Back to Login link is always clickable (Cordova/WebView compatible)
+    const backToLoginLink = document.getElementById('backToLoginLink') || document.querySelector('.back-to-login a');
     if (backToLoginLink) {
-        // Add multiple event listeners to ensure it works
+        // Function to navigate
+        const navigateToLogin = () => {
+            window.location.href = 'login.html';
+        };
+        
+        // Handle click events
         backToLoginLink.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            window.location.href = 'login.html';
+            e.stopImmediatePropagation();
+            navigateToLogin();
             return false;
         });
+        
+        // Handle touch events for Cordova/WebView (critical for mobile)
+        backToLoginLink.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+            backToLoginLink.style.opacity = '0.7';
+        }, { passive: true });
+        
+        backToLoginLink.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            backToLoginLink.style.opacity = '1';
+            navigateToLogin();
+            return false;
+        });
+        
+        backToLoginLink.addEventListener('touchcancel', (e) => {
+            e.stopPropagation();
+            backToLoginLink.style.opacity = '1';
+        }, { passive: true });
         
         // Also handle mousedown as fallback
         backToLoginLink.addEventListener('mousedown', (e) => {
             e.stopPropagation();
         });
         
-        // Force pointer events
+        // Force pointer events and Cordova/WebView styles
         backToLoginLink.style.pointerEvents = 'auto';
         backToLoginLink.style.zIndex = '10000';
         backToLoginLink.style.position = 'relative';
+        backToLoginLink.style.touchAction = 'manipulation';
+        backToLoginLink.style.webkitTapHighlightColor = 'rgba(102, 126, 234, 0.3)';
+        
+        // Also make the parent container clickable
+        const backToLoginContainer = document.querySelector('.back-to-login');
+        if (backToLoginContainer) {
+            backToLoginContainer.style.pointerEvents = 'auto';
+            backToLoginContainer.style.touchAction = 'manipulation';
+        }
     }
 });
 

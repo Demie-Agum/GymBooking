@@ -57,6 +57,28 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Check if coming from link verification (optional - remove if you don't want link verification)
     // checkTokenVerification();
+    
+    // Ensure Back to Login link is always clickable
+    const backToLoginLink = document.querySelector('.back-to-login a');
+    if (backToLoginLink) {
+        // Add multiple event listeners to ensure it works
+        backToLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.location.href = 'login.html';
+            return false;
+        });
+        
+        // Also handle mousedown as fallback
+        backToLoginLink.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+        });
+        
+        // Force pointer events
+        backToLoginLink.style.pointerEvents = 'auto';
+        backToLoginLink.style.zIndex = '10000';
+        backToLoginLink.style.position = 'relative';
+    }
 });
 
 // ========================================
@@ -96,17 +118,20 @@ function checkURLParameters() {
             }
         }
         
-        // Focus on last input
-        if (otpInputs[5]) {
-            otpInputs[5].focus();
-        }
-        
-        // Show message that OTP was auto-filled
-        showToast('Verification code loaded from email link!', 'success');
-        
         // Clean URL (remove OTP from URL for security)
         const newUrl = window.location.pathname + (emailFromUrl ? '?email=' + encodeURIComponent(emailFromUrl) : '');
         window.history.replaceState({}, document.title, newUrl);
+        
+        // Show non-blocking toast notification
+        showToast('Verification code loaded from email link!', 'success');
+        
+        // Auto-submit the form after a short delay to ensure everything is ready
+        setTimeout(() => {
+            if (otpForm && verifyBtn && !verifyBtn.disabled) {
+                // Trigger form submission
+                otpForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }
+        }, 500);
     }
 }
 
@@ -467,8 +492,15 @@ function showToast(message, icon = 'success') {
         icon: icon,
         title: message,
         showConfirmButton: false,
-        timer: 4000,
-        timerProgressBar: true
+        timer: 3000,
+        timerProgressBar: true,
+        allowOutsideClick: true,
+        allowEscapeKey: true,
+        didOpen: (toast) => {
+            // Ensure toast doesn't block interactions
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+        }
     });
 }
 

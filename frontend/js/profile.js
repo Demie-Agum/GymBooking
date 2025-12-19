@@ -720,8 +720,8 @@ if (editProfilePicBtn && profilePictureInput) {
             return;
         }
         
-        if (file.size > 2 * 1024 * 1024) {
-            showToast('Image size should be less than 2MB', 'error');
+        if (file.size > 10 * 1024 * 1024) {
+            showToast('Image size should be less than 10MB', 'error');
             profilePictureInput.value = '';
             return;
         }

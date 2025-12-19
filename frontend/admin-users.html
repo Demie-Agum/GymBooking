@@ -486,6 +486,7 @@
                         <option value="user">User</option>
                         <option value="staff">Staff</option>
                         <option value="admin" id="adminRoleOption">Admin</option>
+                        <option value="super_admin" id="superAdminRoleOption" style="display: none;">Super Admin</option>
                     </select>
                 </div>
                 <div class="form-group" id="membershipLevelGroup" style="display: none;">
@@ -802,8 +803,8 @@
                             showToast('Please select an image file', 'error');
                             return;
                         }
-                        if (file.size > 2 * 1024 * 1024) {
-                            showToast('Image size should be less than 2MB', 'error');
+                        if (file.size > 10 * 1024 * 1024) {
+                            showToast('Image size should be less than 10MB', 'error');
                             return;
                         }
                         const reader = new FileReader();
@@ -919,15 +920,24 @@
         function updateRoleOptions() {
             const roleSelect = document.getElementById('role');
             const adminOption = document.getElementById('adminRoleOption');
+            const superAdminOption = document.getElementById('superAdminRoleOption');
             
             if (!roleSelect || !currentUserRole) return;
             
-            // Super Admin can see all roles (except super_admin - only one exists)
+            // Only Super Admin can create Admin or Super Admin accounts
             if (currentUserRole === 'super_admin') {
+                // Super Admin can see all roles
                 if (adminOption) adminOption.style.display = 'block';
+                if (superAdminOption) superAdminOption.style.display = 'block';
             } else if (currentUserRole === 'admin') {
-                // Regular Admin CAN now create Admin accounts (per teacher's requirement)
-                if (adminOption) adminOption.style.display = 'block';
+                // Regular Admin cannot create Admin or Super Admin accounts
+                if (adminOption) adminOption.style.display = 'none';
+                if (superAdminOption) superAdminOption.style.display = 'none';
+                
+                // If current selection is admin or super_admin, reset to user
+                if (roleSelect.value === 'admin' || roleSelect.value === 'super_admin') {
+                    roleSelect.value = 'user';
+                }
             }
         }
 

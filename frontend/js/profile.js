@@ -772,9 +772,6 @@ if (editProfilePicBtn && profilePictureInput) {
         }
         
         try {
-            // Show loading toast
-            showToast('Compressing image...', 'info');
-            
             // Compress image before upload
             const compressedImage = await compressImage(file);
             

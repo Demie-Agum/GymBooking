@@ -698,6 +698,51 @@ if (changePasswordBtn) {
 }
 
 // ========================================
+// Image Compression Function
+// ========================================
+
+function compressImage(file, maxWidth = 1920, maxHeight = 1920, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Calculate new dimensions
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width = (width * maxHeight) / height;
+                        height = maxHeight;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convert to base64 with compression
+                const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                resolve(compressedBase64);
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// ========================================
 // Profile Picture Upload
 // ========================================
 
@@ -726,20 +771,26 @@ if (editProfilePicBtn && profilePictureInput) {
             return;
         }
         
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            const base64Image = event.target.result;
+        try {
+            // Show loading toast
+            showToast('Compressing image...', 'info');
             
-            // Preview image immediately
-            document.getElementById('profilePictureDisplay').src = base64Image;
+            // Compress image before upload
+            const compressedImage = await compressImage(file);
+            
+            // Preview compressed image immediately
+            document.getElementById('profilePictureDisplay').src = compressedImage;
             
             // Upload to server
-            await uploadProfilePicture(base64Image);
+            await uploadProfilePicture(compressedImage);
             
             // Reset file input
             profilePictureInput.value = '';
-        };
-        reader.readAsDataURL(file);
+        } catch (error) {
+            console.error('Image compression error:', error);
+            showToast('Failed to process image. Please try again.', 'error');
+            profilePictureInput.value = '';
+        }
     });
 }
 

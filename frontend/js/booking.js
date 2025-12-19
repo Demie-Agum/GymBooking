@@ -360,16 +360,21 @@ function displayMyBookings(bookings) {
     
     bookingsList.innerHTML = bookings.map(booking => {
         const imageUrl = booking.gym_session?.image || defaultImage;
+        const statusClass = booking.status === 'queued' ? 'queued' : 
+                           booking.status === 'pending' ? 'pending' : 
+                           booking.status === 'cancelled' ? 'cancelled' : '';
+        const statusBadge = booking.status === 'queued' ? '<span class="badge queue-badge">In Queue</span>' : 
+                           booking.status === 'pending' ? '<span class="badge pending-badge">Pending</span>' : 
+                           booking.status === 'cancelled' ? '<span class="badge cancelled-badge">Cancelled</span>' : 
+                           '<span class="badge confirmed-badge">Confirmed</span>';
         return `
-        <div class="booking-card ${booking.status === 'queued' ? 'queued' : ''} ${booking.status === 'pending' ? 'pending' : ''}">
+        <div class="booking-card ${statusClass}">
             <div class="session-image" style="width: 100%; height: 150px; overflow: hidden; border-radius: 12px 12px 0 0; margin: -1.5rem -1.5rem 1rem -1.5rem; background: #f3f4f6;">
-                <img src="${imageUrl}" alt="${escapeHtml(booking.gym_session.name)}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='${defaultImage}'">
+                <img src="${imageUrl}" alt="${escapeHtml(booking.gym_session.name)}" style="width: 100%; height: 100%; object-fit: cover; ${booking.status === 'cancelled' ? 'opacity: 0.6;' : ''}" onerror="this.src='${defaultImage}'">
             </div>
             <div class="booking-header">
                 <h3>${escapeHtml(booking.gym_session.name)}</h3>
-                ${booking.status === 'queued' ? '<span class="badge queue-badge">In Queue</span>' : 
-                  booking.status === 'pending' ? '<span class="badge pending-badge">Pending</span>' : 
-                  '<span class="badge confirmed-badge">Confirmed</span>'}
+                ${statusBadge}
             </div>
             <div class="booking-info">
                 <p><strong>Date:</strong> ${formatDate(booking.gym_session.date)}</p>
